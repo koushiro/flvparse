@@ -1,0 +1,7 @@
+[package]
+name = "flvparser"
+version = "0.1.0"
+authors = ["koushiro <koushiro.cqx@gmail.com>"]
+
+[dependencies]
+nom = "*"

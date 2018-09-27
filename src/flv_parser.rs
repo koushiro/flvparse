@@ -329,9 +329,9 @@ pub fn video_tag(input: &[u8], size: usize) -> IResult<&[u8], VideoTag> {
     do_parse!(
         input,
         // VideoTagHeader
-        header: apply!(video_tag_header, size)  >>
+        header: apply!(video_tag_header, size)      >>
         // VideoTagBody
-        body:   apply!(video_tag_body, size)    >>
+        body:   apply!(video_tag_body, size - 1)    >>
         (VideoTag {
             header,
             body,
@@ -357,16 +357,16 @@ pub enum FrameType {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CodecID {
-//    RGB,          // 0
-//    JPEG,         // 1
+    //    RGB,          // 0
+    //    JPEG,         // 1
     SorensonH263, // 2
     Screen1,      // 3
     VP6,          // 4
     VP6Alpha,     // 5
     Screen2,      // 6
     AVC,          // 7, MPEG-4 Part 10 AVC / ITU-T H.264
-//    H263,         // 8
-//    MPEG4Part2,   // 9
+    //    H263,         // 8
+    //    MPEG4Part2,   // 9
     Unknown, // Others
 }
 
@@ -644,113 +644,330 @@ pub fn script_data_strict_array(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataVa
 mod tests {
     use super::*;
 
+    // Just use 3 tags of TEST_FLV_FILE:
+    // 1. script tag
+    // 2. video tag
+    // 3. audio tag
+    const TEST_FLV_FILE: &'static [u8] = include_bytes!("../assets/test.flv");
+    const FLV_FILE_HEADER_LENGTH: usize = 9;
+    const PREVIOUS_TAG_SIZE_LENGTH: usize = 4;
+    const FLV_TAG_HEADER_LENGTH: usize = 11;
+    const AUDIO_TAG_HEADER_LENGTH: usize = 1;
+    const VIDEO_TAG_HEADER_LENGTH: usize = 1;
+
     #[test]
     fn test_flv_file_header() {
-
+        assert_eq!(
+            flv_file_header(&TEST_FLV_FILE[..9]),
+            Ok((
+                &b""[..],
+                FLVFileHeader {
+                    signature: [0x46, 0x4c, 0x56],
+                    version: 1,
+                    has_audio: true,
+                    has_video: true,
+                    data_offset: 9,
+                }
+            ))
+        )
     }
 
-    #[test]
-    fn test_flv_tag() {
-
-    }
+    //    #[test]
+    //    fn test_flv_tag() {
+    //
+    //    }
 
     #[test]
     fn test_flv_tag_header() {
+        // The first tag starts at 9 bytes (flv file header size) + 4 bytes (previous tag size)
+        // The size of tag header is 11 bytes.
 
+        // script tag (the first tag in TEST_FLV_FILE)
+        let mut start: usize = FLV_FILE_HEADER_LENGTH + PREVIOUS_TAG_SIZE_LENGTH;
+        let mut end: usize = start + FLV_TAG_HEADER_LENGTH;
+        assert_eq!(
+            flv_tag_header(&TEST_FLV_FILE[start..end]),
+            Ok((
+                &b""[..],
+                FLVTagHeader {
+                    tag_type: FLVTagType::Script, // 0x12
+                    data_size: 1030,              // 0x000406
+                    timestamp: 0,                 // 0x00000000
+                    stream_id: 0,                 // 0x000000
+                }
+            ))
+        );
+
+        // video tag (the second tag in TEST_FLV_FILE)
+        start = end + 1030 + PREVIOUS_TAG_SIZE_LENGTH;
+        end = start + FLV_TAG_HEADER_LENGTH;
+        assert_eq!(
+            flv_tag_header(&TEST_FLV_FILE[start..end]),
+            Ok((
+                &b""[..],
+                FLVTagHeader {
+                    tag_type: FLVTagType::Video, // 0x09
+                    data_size: 48,               // 0x000030
+                    timestamp: 0,                // 0x00000000
+                    stream_id: 0,                // 0x000000
+                }
+            ))
+        );
+
+        // audio tag (the third tag in TEST_FLV_FILE)
+        start = end + 48 + PREVIOUS_TAG_SIZE_LENGTH;
+        end = start + FLV_TAG_HEADER_LENGTH;
+        assert_eq!(
+            flv_tag_header(&TEST_FLV_FILE[start..end]),
+            Ok((
+                &b""[..],
+                FLVTagHeader {
+                    tag_type: FLVTagType::Audio, // 0x08
+                    data_size: 7,                // 0x000007
+                    timestamp: 0,                // 0x00000000
+                    stream_id: 0,                // 0x000000
+                }
+            ))
+        );
     }
 
-    #[test]
-    fn test_flv_tag_data() {
-
-    }
+    //    #[test]
+    //    fn test_flv_tag_data() {
+    //
+    //    }
 
     #[test]
     fn test_audio_tag() {
-
+        // audio tag (the third tag in TEST_FLV_FILE)
+        let start: usize = FLV_FILE_HEADER_LENGTH
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 1030
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 48
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH;
+        let end: usize = start + 7;
+        assert_eq!(
+            audio_tag(&TEST_FLV_FILE[start..end], 7),
+            Ok((
+                &b""[..],
+                AudioTag {
+                    // 0xaf = 0b1010 1111, 1 byte
+                    header: AudioTagHeader {
+                        sound_format: SoundFormat::AAC, // 0b1010 = 10
+                        sound_rate: SoundRate::_44KHZ,  // 0b11 = 3
+                        sound_size: SoundSize::_16Bit,  // 0b01 = 1
+                        sound_type: SoundType::Stereo,  // 0b01 = 1
+                    },
+                    // 0x0012 1056 e500, 6 bytes
+                    body: AudioTagBody {
+                        data: &b"\x00\x12\x10\x56\xe5\x00"[..],
+                    },
+                }
+            ))
+        );
     }
 
     #[test]
     fn test_audio_tag_header() {
-
+        // audio tag (the third tag in TEST_FLV_FILE)
+        let start: usize = FLV_FILE_HEADER_LENGTH
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 1030
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 48
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH;
+        let end: usize = start + AUDIO_TAG_HEADER_LENGTH;
+        assert_eq!(
+            audio_tag_header(&TEST_FLV_FILE[start..end], AUDIO_TAG_HEADER_LENGTH),
+            Ok((
+                &b""[..],
+                // 0xaf = 0b1010 1111, 1 byte
+                AudioTagHeader {
+                    sound_format: SoundFormat::AAC, // 0b1010 = 10
+                    sound_rate: SoundRate::_44KHZ,  // 0b11 = 3
+                    sound_size: SoundSize::_16Bit,  // 0b01 = 1
+                    sound_type: SoundType::Stereo,  // 0b01 = 1
+                }
+            ))
+        );
     }
 
     #[test]
     fn test_audio_tag_body() {
-
+        // audio tag (the third tag in TEST_FLV_FILE)
+        let start: usize = FLV_FILE_HEADER_LENGTH
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 1030
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 48
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + AUDIO_TAG_HEADER_LENGTH;
+        let end: usize = start + 7 - AUDIO_TAG_HEADER_LENGTH;
+        assert_eq!(
+            audio_tag_body(&TEST_FLV_FILE[start..end], 7 - AUDIO_TAG_HEADER_LENGTH),
+            Ok((
+                &b""[..],
+                // 0x0012 1056 e500, 6 bytes
+                AudioTagBody {
+                    data: &b"\x00\x12\x10\x56\xe5\x00"[..],
+                }
+            ))
+        );
     }
 
-    #[test]
-    fn test_aac_audio_packet() {
-
-    }
+    //    #[test]
+    //    fn test_aac_audio_packet() {
+    //
+    //    }
 
     #[test]
     fn test_video_tag() {
-
+        // video tag header (the second tag in TEST_FLV_FILE)
+        let start: usize = FLV_FILE_HEADER_LENGTH
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 1030
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH;
+        let end: usize = start + 48;
+        assert_eq!(
+            video_tag(&TEST_FLV_FILE[start..end], 48),
+            Ok((
+                &b""[..],
+                VideoTag {
+                    // 0x17 = 0b0001 0111, 1 byte
+                    header: VideoTagHeader {
+                        frame_type: FrameType::Key, // 0b0001 = 1
+                        codec_id: CodecID::AVC,     // 0b0111 = 7
+                    },
+                    // 0x0000 0000 0164 0028 ffe1 001b 6764 0028 acd9 4078
+                    //   0227 e5c0 4400 0003 0004 0000 0300 c03c 60c6 5801
+                    //   0005 68eb ecf2 3c, 47 bytes
+                    body: VideoTagBody {
+                        data: &b"\x00\x00\x00\x00\x01\x64\x00\x28\xff\xe1\
+                                 \x00\x1b\x67\x64\x00\x28\xac\xd9\x40\x78\
+                                 \x02\x27\xe5\xc0\x44\x00\x00\x03\x00\x04\
+                                 \x00\x00\x03\x00\xc0\x3c\x60\xc6\x58\x01\
+                                 \x00\x05\x68\xeb\xec\xf2\x3c"[..],
+                    },
+                }
+            ))
+        );
     }
 
     #[test]
     fn test_video_tag_header() {
-
+        // video tag header (the second tag in TEST_FLV_FILE)
+        let start: usize = FLV_FILE_HEADER_LENGTH
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 1030
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH;
+        let end: usize = start + VIDEO_TAG_HEADER_LENGTH;
+        assert_eq!(
+            video_tag_header(&TEST_FLV_FILE[start..end], VIDEO_TAG_HEADER_LENGTH),
+            Ok((
+                &b""[..],
+                // 0x17 = 0b0001 0111, 1 byte
+                VideoTagHeader {
+                    frame_type: FrameType::Key, // 0b0001 = 1
+                    codec_id: CodecID::AVC,     // 0b0111 = 7
+                }
+            ))
+        );
     }
 
     #[test]
     fn test_video_tag_body() {
-
+        // video tag (the second tag in TEST_FLV_FILE)
+        let start: usize = FLV_FILE_HEADER_LENGTH
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + 1030
+            + PREVIOUS_TAG_SIZE_LENGTH
+            + FLV_TAG_HEADER_LENGTH
+            + VIDEO_TAG_HEADER_LENGTH;
+        let end: usize = start + 48 - VIDEO_TAG_HEADER_LENGTH;
+        assert_eq!(
+            video_tag_body(&TEST_FLV_FILE[start..end], 48 - VIDEO_TAG_HEADER_LENGTH),
+            Ok((
+                &b""[..],
+                // 0x0000 0000 0164 0028 ffe1 001b 6764 0028 acd9 4078
+                //   0227 e5c0 4400 0003 0004 0000 0300 c03c 60c6 5801
+                //   0005 68eb ecf2 3c, 47 bytes
+                VideoTagBody {
+                    data: &b"\x00\x00\x00\x00\x01\x64\x00\x28\xff\xe1\
+                             \x00\x1b\x67\x64\x00\x28\xac\xd9\x40\x78\
+                             \x02\x27\xe5\xc0\x44\x00\x00\x03\x00\x04\
+                             \x00\x00\x03\x00\xc0\x3c\x60\xc6\x58\x01\
+                             \x00\x05\x68\xeb\xec\xf2\x3c"[..],
+                }
+            ))
+        );
     }
 
-    #[test]
-    fn test_avc_video_packet() {
+    //    #[test]
+    //    fn test_avc_video_packet() {
+    //
+    //    }
 
-    }
+    //    #[test]
+    //    fn test_script_tag() {
+    //
+    //    }
 
-    #[test]
-    fn test_script_tag() {
+    //    #[test]
+    //    fn test_script_data_value() {
+    //
+    //    }
 
-    }
+    //    #[test]
+    //    fn test_script_data_string() {
+    //
+    //    }
 
-    #[test]
-    fn test_script_data_value() {
+    //    #[test]
+    //    fn test_script_data_long_string() {
+    //
+    //    }
 
-    }
+    //    #[test]
+    //    fn test_script_data_date() {
+    //
+    //    }
 
-    #[test]
-    fn test_script_data_string() {
+    //    #[test]
+    //    fn test_script_data_object_property() {
+    //
+    //    }
 
-    }
+    //    #[test]
+    //    fn test_script_data_object_end_marker() {
+    //
+    //    }
 
-    #[test]
-    fn test_script_data_long_string() {
+    //    #[test]
+    //    fn test_script_data_object() {
+    //
+    //    }
 
-    }
+    //    #[test]
+    //    fn test_script_data_ecma_array() {
+    //
+    //    }
 
-    #[test]
-    fn test_script_data_date() {
-
-    }
-
-    #[test]
-    fn test_script_data_object_property() {
-
-    }
-
-    #[test]
-    fn test_script_data_object_end_marker() {
-
-    }
-
-    #[test]
-    fn test_script_data_object() {
-
-    }
-
-    #[test]
-    fn test_script_data_ecma_array() {
-
-    }
-
-    #[test]
-    fn test_script_data_strict_array() {
-
-    }
+    //    #[test]
+    //    fn test_script_data_strict_array() {
+    //
+    //    }
 }

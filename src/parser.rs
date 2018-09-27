@@ -223,15 +223,15 @@ pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHea
         bits!(
             tuple!(
                 switch!(take_bits!(u8, 4),
-                    0  => value!(SoundFormat::PcmPlatformEndian)   |
+                    0  => value!(SoundFormat::PcmPlatformEndian)    |
                     1  => value!(SoundFormat::ADPCM)                |
                     2  => value!(SoundFormat::MP3)                  |
-                    3  => value!(SoundFormat::PcmLittleEndian)     |
+                    3  => value!(SoundFormat::PcmLittleEndian)      |
                     4  => value!(SoundFormat::Nellymoser16kHzMono)  |
                     5  => value!(SoundFormat::Nellymoser8kHzMono)   |
                     6  => value!(SoundFormat::Nellymoser)           |
-                    7  => value!(SoundFormat::PcmALaw)             |
-                    8  => value!(SoundFormat::PcmMuLaw)            |
+                    7  => value!(SoundFormat::PcmALaw)              |
+                    8  => value!(SoundFormat::PcmMuLaw)             |
                     9  => value!(SoundFormat::Reserved)             |
                     10 => value!(SoundFormat::AAC)                  |
                     11 => value!(SoundFormat::Speex)                |
@@ -241,7 +241,7 @@ pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHea
                 switch!(take_bits!(u8, 2),
                     0 => value!(SoundRate::_5_5KHZ) |
                     1 => value!(SoundRate::_11KHZ)  |
-                    2 => value!(SoundRate::_22KHZ)   |
+                    2 => value!(SoundRate::_22KHZ)  |
                     3 => value!(SoundRate::_44KHZ)
                 ),
                 switch!(take_bits!(u8, 1),

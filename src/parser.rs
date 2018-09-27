@@ -1,7 +1,8 @@
 /// https://www.adobe.com/content/dam/acom/en/devnet/flv/video_file_format_spec_v10_1.pdf
 use std::str;
 
-use nom::{be_f64, be_i16, be_i24, be_u16, be_u24, be_u32, be_u8, Err as NomErr, IResult, Needed};
+use nom::{be_f64, be_i16, be_i24, be_u16, be_u24, be_u32, be_u8};
+use nom::{Err as NomErr, IResult, Needed};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FLVFileHeader {
@@ -182,7 +183,7 @@ pub enum SoundFormat {
     PcmALaw,             // 7
     PcmMuLaw,            // 8
     Reserved,            // 9
-    AAC,                 // 10
+    AAC,                 // 10, MPEG-4 Part3 AAC
     Speex,               // 11
     MP3_8kHz,            // 14
     DeviceSpecific,      // 15
@@ -327,9 +328,9 @@ pub struct VideoTag<'a> {
 pub fn video_tag(input: &[u8], size: usize) -> IResult<&[u8], VideoTag> {
     do_parse!(
         input,
-        /// VideoTagHeader
+        // VideoTagHeader
         header: apply!(video_tag_header, size)  >>
-        /// VideoTagBody
+        // VideoTagBody
         body:   apply!(video_tag_body, size)    >>
         (VideoTag {
             header,
@@ -363,7 +364,7 @@ pub enum CodecID {
     VP6,          // 4
     VP6Alpha,     // 5
     Screen2,      // 6
-    AVC,          // 7
+    AVC,          // 7, MPEG-4 Part 10 AVC / ITU-T H.264
 //    H263,         // 8
 //    MPEG4Part2,   // 9
     Unknown, // Others
@@ -643,4 +644,113 @@ pub fn script_data_strict_array(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataVa
 mod tests {
     use super::*;
 
+    #[test]
+    fn test_flv_file_header() {
+
+    }
+
+    #[test]
+    fn test_flv_tag() {
+
+    }
+
+    #[test]
+    fn test_flv_tag_header() {
+
+    }
+
+    #[test]
+    fn test_flv_tag_data() {
+
+    }
+
+    #[test]
+    fn test_audio_tag() {
+
+    }
+
+    #[test]
+    fn test_audio_tag_header() {
+
+    }
+
+    #[test]
+    fn test_audio_tag_body() {
+
+    }
+
+    #[test]
+    fn test_aac_audio_packet() {
+
+    }
+
+    #[test]
+    fn test_video_tag() {
+
+    }
+
+    #[test]
+    fn test_video_tag_header() {
+
+    }
+
+    #[test]
+    fn test_video_tag_body() {
+
+    }
+
+    #[test]
+    fn test_avc_video_packet() {
+
+    }
+
+    #[test]
+    fn test_script_tag() {
+
+    }
+
+    #[test]
+    fn test_script_data_value() {
+
+    }
+
+    #[test]
+    fn test_script_data_string() {
+
+    }
+
+    #[test]
+    fn test_script_data_long_string() {
+
+    }
+
+    #[test]
+    fn test_script_data_date() {
+
+    }
+
+    #[test]
+    fn test_script_data_object_property() {
+
+    }
+
+    #[test]
+    fn test_script_data_object_end_marker() {
+
+    }
+
+    #[test]
+    fn test_script_data_object() {
+
+    }
+
+    #[test]
+    fn test_script_data_ecma_array() {
+
+    }
+
+    #[test]
+    fn test_script_data_strict_array() {
+
+    }
 }

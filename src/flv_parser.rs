@@ -199,8 +199,8 @@ pub enum SoundRate {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum SoundSize {
-    _8Bits,  // 0
-    _16Bits, // 1
+    _8Bit,  // 0
+    _16Bit, // 1
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -240,8 +240,8 @@ pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHea
                     3 => value!(SoundRate::_44KHZ)
             ),
             switch!(take_bits!(u8, 1),
-                    0 => value!(SoundSize::_8Bits)  |
-                    1 => value!(SoundSize::_16Bits)
+                    0 => value!(SoundSize::_8Bit)   |
+                    1 => value!(SoundSize::_16Bit)
             ),
             switch!(take_bits!(u8, 1),
                     0 => value!(SoundType::Mono)    |

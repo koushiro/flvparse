@@ -1,0 +1,164 @@
+ScriptTag { 
+    name: "onMetaData", 
+    value: ECMAArray([
+        ScriptDataObjectProperty {
+            property_name: "description", 
+            property_data: String("Codec by Bilibili XCode Worker v4.4.17(fixed_gap:False)") 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "metadatacreator", 
+            property_data: String("Version 1.9") 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "hasKeyframes", 
+            property_data: Boolean(true) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "hasVideo", 
+            property_data: Boolean(true) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "hasAudio", 
+            property_data: Boolean(true) 
+        }, 
+        ScriptDataObjectProperty {
+            property_name: "hasMetadata", 
+            property_data: Boolean(true) 
+        },
+        ScriptDataObjectProperty { 
+            property_name: "canSeekToEnd", 
+            property_data: Boolean(true) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "duration",
+            property_data: Number(194.517) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "datasize", 
+            property_data: Number(10168937.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "videosize", 
+            property_data: Number(2392510.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "framerate", 
+            property_data: Number(24.01543408360129) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "videodatarate", 
+            property_data: Number(94.09815112540193) 
+        }, 
+        ScriptDataObjectProperty {
+            property_name: "videocodecid", 
+            property_data: Number(7.0)
+        }, 
+        ScriptDataObjectProperty {
+            property_name: "width",
+            property_data: Number(1920.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "height", 
+            property_data: Number(1080.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "audiosize", 
+            property_data: Number(7724267.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "audiodatarate", 
+            property_data: Number(306.5355068580124) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "audiocodecid", 
+            property_data: Number(10.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "audiosamplerate", 
+            property_data: Number(3.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "audiosamplesize", 
+            property_data: Number(1.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "stereo", 
+            property_data: Boolean(true)
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "filesize", 
+            property_data: Number(10169995.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "lasttimestamp", 
+            property_data: Number(194.375) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "lastkeyframetimestamp", 
+            property_data: Number(194.375) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "lastkeyframelocation", 
+            property_data: Number(10169975.0) 
+        }, 
+        ScriptDataObjectProperty { 
+            property_name: "keyframes", 
+            property_data: Object([
+                ScriptDataObjectProperty { 
+                    property_name: "filepositions", 
+                    property_data: StrictArray([
+                        Number(1058.0), 
+                        Number(1143.0), 
+                        Number(371887.0), 
+                        Number(847626.0), 
+                        Number(1334735.0), 
+                        Number(1820692.0), 
+                        Number(2304839.0), 
+                        Number(2857985.0), 
+                        Number(3395640.0), 
+                        Number(3955507.0), 
+                        Number(4448601.0), 
+                        Number(4917339.0), 
+                        Number(5380323.0), 
+                        Number(5862615.0), 
+                        Number(6364648.0), 
+                        Number(6867232.0), 
+                        Number(7414669.0), 
+                        Number(7950581.0), 
+                        Number(8594010.0), 
+                        Number(9433239.0), 
+                        Number(10088872.0), 
+                        Number(10169975.0)
+                    ]) 
+                }, 
+                ScriptDataObjectProperty { 
+                    property_name: "times", 
+                    property_data: StrictArray([
+                        Number(0.0),
+                        Number(0.0), 
+                        Number(10.0), 
+                        Number(20.0), 
+                        Number(30.0), 
+                        Number(40.0), 
+                        Number(50.0), 
+                        Number(60.0), 
+                        Number(70.0), 
+                        Number(80.0), 
+                        Number(90.0), 
+                        Number(100.0),
+                        Number(110.0), 
+                        Number(120.0), 
+                        Number(130.0), 
+                        Number(140.0), 
+                        Number(150.0), 
+                        Number(160.0), 
+                        Number(170.0), 
+                        Number(180.0), 
+                        Number(190.0), 
+                        Number(194.375)
+                    ]) 
+                }
+            ])
+        }
+    ]) 
+}

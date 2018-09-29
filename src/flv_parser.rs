@@ -7,6 +7,26 @@ use nom::{
     IResult, Err as NomErr, Needed
 };
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct FLVFile<'a> {
+    pub header: FLVFileHeader,
+    pub body: FLVFileBody<'a>,
+}
+
+pub fn parse_flv_file(input: &[u8]) -> IResult<&[u8], FLVFile> {
+    do_parse!(
+        input,
+        // FLV file header.
+        header: flv_file_header >>
+        // FLV file body.
+        body:   flv_file_body   >>
+        (FLVFile {
+            header,
+            body,
+        })
+    )
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FLVFileHeader {
     /// Signature bytes are always "FLV" (0x46, 0x4c, 0x56).
@@ -382,7 +402,7 @@ pub enum CodecID {
     VP6,          // 4
     VP6Alpha,     // 5
     Screen2,      // 6
-    AVC,          // 7, MPEG-4 Part 10 AVC / ITU-T H.264
+    AVC,          // 7, MPEG-4 Part 10 AVC / H.264
     //    H263,         // 8
     //    MPEG4Part2,   // 9
     Unknown, // Others
@@ -702,6 +722,24 @@ mod tests {
     const VIDEO_TAG_HEADER_LENGTH: usize = 1;
 
     #[test]
+    fn test_parse_flv_file() {
+        let flv_file = parse_flv_file(&TEST_FLV_FILE[..]).unwrap().1;
+        assert_eq!(
+            flv_file.header,
+            FLVFileHeader {
+                signature: [0x46, 0x4c, 0x56],
+                version: 1,
+                has_audio: true,
+                has_video: true,
+                data_offset: 9,
+        });
+        assert_eq!(flv_file.body.first_previous_tag_size, 0);
+        assert_eq!(flv_file.body.tags[0].1, 11 + 1030);
+        assert_eq!(flv_file.body.tags[1].1, 11 + 48);
+        assert_eq!(flv_file.body.tags[2].1, 11 + 7);
+    }
+
+    #[test]
     fn test_flv_file_header() {
         let end = FLV_FILE_HEADER_LENGTH;
         println!(
@@ -725,7 +763,7 @@ mod tests {
 
     #[test]
     fn test_flv_file_body() {
-        let start: usize = FLV_FILE_HEADER_LENGTH;
+        let start = FLV_FILE_HEADER_LENGTH;
         let body = flv_file_body(&TEST_FLV_FILE[start..]).unwrap().1;
         assert_eq!(body.first_previous_tag_size, 0);
         assert_eq!(body.tags[0].1, 11 + 1030);
@@ -736,7 +774,7 @@ mod tests {
     #[test]
     fn test_flv_tag() {
         // Just test audio tag (the third tag in TEST_FLV_FILE)
-        let start: usize = FLV_FILE_HEADER_LENGTH
+        let start = FLV_FILE_HEADER_LENGTH
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + 1030
@@ -784,8 +822,8 @@ mod tests {
         // The size of tag header is 11 bytes.
 
         // script tag (the first tag in TEST_FLV_FILE)
-        let mut start: usize = FLV_FILE_HEADER_LENGTH + PREVIOUS_TAG_SIZE_LENGTH;
-        let mut end: usize = start + FLV_TAG_HEADER_LENGTH;
+        let mut start = FLV_FILE_HEADER_LENGTH + PREVIOUS_TAG_SIZE_LENGTH;
+        let mut end = start + FLV_TAG_HEADER_LENGTH;
         println!(
             "flv tag header = {:?}",
             flv_tag_header(&TEST_FLV_FILE[start..end]).unwrap().1
@@ -847,7 +885,7 @@ mod tests {
     #[test]
     fn test_flv_tag_data() {
         // Just test the audio tag (the third tag in TEST_FLV_FILE)
-        let start: usize = FLV_FILE_HEADER_LENGTH
+        let start = FLV_FILE_HEADER_LENGTH
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + 1030
@@ -856,7 +894,7 @@ mod tests {
             + 48
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH;
-        let end: usize = start + 7;
+        let end = start + 7;
         println!(
             "flv tag data = {:?}",
             flv_tag_data(&TEST_FLV_FILE[start..end], FLVTagType::Audio, 7)
@@ -887,7 +925,7 @@ mod tests {
     #[test]
     fn test_audio_tag() {
         // audio tag (the third tag in TEST_FLV_FILE)
-        let start: usize = FLV_FILE_HEADER_LENGTH
+        let start = FLV_FILE_HEADER_LENGTH
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + 1030
@@ -896,7 +934,7 @@ mod tests {
             + 48
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH;
-        let end: usize = start + 7;
+        let end = start + 7;
         println!(
             "audio tag = {:?}",
             audio_tag(&TEST_FLV_FILE[start..end], 7).unwrap().1
@@ -925,7 +963,7 @@ mod tests {
     #[test]
     fn test_audio_tag_header() {
         // audio tag (the third tag in TEST_FLV_FILE)
-        let start: usize = FLV_FILE_HEADER_LENGTH
+        let start = FLV_FILE_HEADER_LENGTH
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + 1030
@@ -934,7 +972,7 @@ mod tests {
             + 48
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH;
-        let end: usize = start + AUDIO_TAG_HEADER_LENGTH;
+        let end = start + AUDIO_TAG_HEADER_LENGTH;
         println!(
             "audio tag header = {:?}",
             audio_tag_header(&TEST_FLV_FILE[start..end], AUDIO_TAG_HEADER_LENGTH)
@@ -959,7 +997,7 @@ mod tests {
     #[test]
     fn test_audio_tag_body() {
         // audio tag (the third tag in TEST_FLV_FILE)
-        let start: usize = FLV_FILE_HEADER_LENGTH
+        let start = FLV_FILE_HEADER_LENGTH
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + 1030
@@ -969,7 +1007,7 @@ mod tests {
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + AUDIO_TAG_HEADER_LENGTH;
-        let end: usize = start + 7 - AUDIO_TAG_HEADER_LENGTH;
+        let end = start + 7 - AUDIO_TAG_HEADER_LENGTH;
         println!(
             "audio tag body = {:?}",
             audio_tag_body(&TEST_FLV_FILE[start..end], 7 - AUDIO_TAG_HEADER_LENGTH)
@@ -996,13 +1034,13 @@ mod tests {
     #[test]
     fn test_video_tag() {
         // video tag header (the second tag in TEST_FLV_FILE)
-        let start: usize = FLV_FILE_HEADER_LENGTH
+        let start = FLV_FILE_HEADER_LENGTH
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + 1030
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH;
-        let end: usize = start + 48;
+        let end = start + 48;
         println!(
             "video tag = {:?}",
             video_tag(&TEST_FLV_FILE[start..end], 48).unwrap().1
@@ -1035,13 +1073,13 @@ mod tests {
     #[test]
     fn test_video_tag_header() {
         // video tag header (the second tag in TEST_FLV_FILE)
-        let start: usize = FLV_FILE_HEADER_LENGTH
+        let start = FLV_FILE_HEADER_LENGTH
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + 1030
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH;
-        let end: usize = start + VIDEO_TAG_HEADER_LENGTH;
+        let end = start + VIDEO_TAG_HEADER_LENGTH;
         println!(
             "video tag header = {:?}",
             video_tag_header(&TEST_FLV_FILE[start..end], VIDEO_TAG_HEADER_LENGTH)
@@ -1064,14 +1102,14 @@ mod tests {
     #[test]
     fn test_video_tag_body() {
         // video tag (the second tag in TEST_FLV_FILE)
-        let start: usize = FLV_FILE_HEADER_LENGTH
+        let start = FLV_FILE_HEADER_LENGTH
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + 1030
             + PREVIOUS_TAG_SIZE_LENGTH
             + FLV_TAG_HEADER_LENGTH
             + VIDEO_TAG_HEADER_LENGTH;
-        let end: usize = start + 48 - VIDEO_TAG_HEADER_LENGTH;
+        let end = start + 48 - VIDEO_TAG_HEADER_LENGTH;
         println!(
             "video tag body = {:?}",
             video_tag_body(&TEST_FLV_FILE[start..end], 48 - VIDEO_TAG_HEADER_LENGTH)
@@ -1113,9 +1151,8 @@ mod tests {
     #[test]
     fn test_script_tag() {
         // script tag (the first tag in TEST_FLV_FILE)
-        let start: usize =
-            FLV_FILE_HEADER_LENGTH + PREVIOUS_TAG_SIZE_LENGTH + FLV_TAG_HEADER_LENGTH;
-        let end: usize = start + 1030;
+        let start = FLV_FILE_HEADER_LENGTH + PREVIOUS_TAG_SIZE_LENGTH + FLV_TAG_HEADER_LENGTH;
+        let end = start + 1030;
         println!(
             "script tag = {:?}",
             script_tag(&TEST_FLV_FILE[start..end], 1030)

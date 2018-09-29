@@ -2,8 +2,10 @@
 
 use std::str;
 
-use nom::{be_f64, be_i16, be_i24, be_u16, be_u24, be_u32, be_u8};
-use nom::{Err as NomErr, IResult, Needed};
+use nom::{
+    be_u8, be_u16, be_u24, be_u32, be_i16, be_i24, be_f64,
+    IResult, Err as NomErr, Needed
+};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FLVFileHeader {
@@ -51,13 +53,14 @@ pub struct FLVFileBody<'a> {
     pub tags: Vec<(FLVTag<'a>, u32)>,
 }
 
+// https://github.com/Geal/nom/issues/790 - many0 returns Incomplete in weird cases.
 pub fn flv_file_body(input: &[u8]) -> IResult<&[u8], FLVFileBody> {
     do_parse!(
         input,
         // The first previous tag size.
-        first_previous_tag_size: be_u32         >>
+        first_previous_tag_size: be_u32                    >>
         // FLV Tag and the size of the tag.
-        tags: many0!(tuple!(flv_tag, be_u32))   >>
+        tags: many0!(complete!(tuple!(flv_tag, be_u32)))   >>
         (FLVFileBody {
             first_previous_tag_size,
             tags,
@@ -722,13 +725,12 @@ mod tests {
 
     #[test]
     fn test_flv_file_body() {
-        // Fixme: flv_file_body(input).unwrap() failed.
-//        let start: usize = FLV_FILE_HEADER_LENGTH;
-//        let body = flv_file_body(&TEST_FLV_FILE[start..]).unwrap().1;
-//        assert_eq!(body.first_previous_tag_size, 0);
-//        assert_eq!(body.tags[0].1, 11 + 1030);
-//        assert_eq!(body.tags[1].1, 11 + 48);
-//        assert_eq!(body.tags[2].1, 11 + 7);
+        let start: usize = FLV_FILE_HEADER_LENGTH;
+        let body = flv_file_body(&TEST_FLV_FILE[start..]).unwrap().1;
+        assert_eq!(body.first_previous_tag_size, 0);
+        assert_eq!(body.tags[0].1, 11 + 1030);
+        assert_eq!(body.tags[1].1, 11 + 48);
+        assert_eq!(body.tags[2].1, 11 + 7);
     }
 
     #[test]
@@ -857,7 +859,9 @@ mod tests {
         let end: usize = start + 7;
         println!(
             "flv tag data = {:?}",
-            flv_tag_data(&TEST_FLV_FILE[start..end], FLVTagType::Audio, 7).unwrap().1
+            flv_tag_data(&TEST_FLV_FILE[start..end], FLVTagType::Audio, 7)
+                .unwrap()
+                .1
         );
         assert_eq!(
             flv_tag_data(&TEST_FLV_FILE[start..end], FLVTagType::Audio, 7),
@@ -1123,7 +1127,12 @@ mod tests {
                 ScriptTag {
                     name: "onMetaData",
                     value: ScriptDataValue::ECMAArray(vec![
-                        obj_prop!("description", ScriptDataValue::String("Codec by Bilibili XCode Worker v4.4.17(fixed_gap:False)")),
+                        obj_prop!(
+                            "description",
+                            ScriptDataValue::String(
+                                "Codec by Bilibili XCode Worker v4.4.17(fixed_gap:False)"
+                            )
+                        ),
                         obj_prop!("metadatacreator", ScriptDataValue::String("Version 1.9")),
                         obj_prop!("hasKeyframes", ScriptDataValue::Boolean(true)),
                         obj_prop!("hasVideo", ScriptDataValue::Boolean(true)),
@@ -1243,10 +1252,7 @@ mod tests {
         );
         assert_eq!(
             script_data_long_string(input),
-            Ok((
-                &b"Remain"[..],
-                "Long String"
-            ))
+            Ok((&b"Remain"[..], "Long String"))
         );
     }
 }

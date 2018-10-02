@@ -37,6 +37,7 @@ pub struct FLVFileHeader {
     /// TypeFlagsAudio      1 bit   1 = Audio tags are present.
     /// TypeFlagsReserved   1 bit   Shall be 0.
     /// TypeFlagsVideo      1 bit   1 = Video tags are present.
+    pub flags: u8,
     pub has_audio: bool,
     pub has_video: bool,
     /// The length of this header in bytes, usually has a value of 9 for FLV version 1.
@@ -58,6 +59,7 @@ pub fn flv_file_header(input: &[u8]) -> IResult<&[u8], FLVFileHeader> {
         (FLVFileHeader {
             signature: [0x46, 0x4c, 0x56],
             version,
+            flags,
             has_audio: flags & 4 == 4,
             has_video: flags & 1 == 1,
             data_offset,
@@ -729,10 +731,12 @@ mod tests {
             FLVFileHeader {
                 signature: [0x46, 0x4c, 0x56],
                 version: 1,
+                flags: 0b0000_0101,
                 has_audio: true,
                 has_video: true,
                 data_offset: 9,
-        });
+            }
+        );
         assert_eq!(flv_file.body.first_previous_tag_size, 0);
         assert_eq!(flv_file.body.tags[0].1, 11 + 1030);
         assert_eq!(flv_file.body.tags[1].1, 11 + 48);
@@ -753,6 +757,7 @@ mod tests {
                 FLVFileHeader {
                     signature: [0x46, 0x4c, 0x56],
                     version: 1,
+                    flags: 0b0000_0101,
                     has_audio: true,
                     has_video: true,
                     data_offset: 9,

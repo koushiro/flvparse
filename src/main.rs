@@ -104,12 +104,14 @@ fn main() {
             Arg::with_name("INPUT")
                 .help("The input FLV file to parse")
                 .required(true),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("print")
                 .short("p")
                 .long("print")
                 .help("Prints all tables about FLV File info"),
-        ).get_matches();
+        )
+        .get_matches();
 
     let file_path = matches.value_of("INPUT").unwrap();
     let file = File::open(file_path).expect("Unable to open the file");

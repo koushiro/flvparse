@@ -1,4 +1,6 @@
-// https://www.adobe.com/content/dam/acom/en/devnet/flv/video_file_format_spec_v10_1.pdf  -- Annex E. The FLV File Format
+/// Parse the structure of the contents of FLV files.
+///
+/// [The FLV File Format Spec](https://www.adobe.com/content/dam/acom/en/devnet/flv/video_file_format_spec_v10_1.pdf)
 
 use std::str;
 
@@ -7,6 +9,7 @@ use nom::{
     IResult, Err as NomErr, Needed
 };
 
+/// The FLV file structure, including header and body.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FLVFile<'a> {
     pub header: FLVFileHeader,
@@ -27,6 +30,7 @@ pub fn parse_flv_file(input: &[u8]) -> IResult<&[u8], FLVFile> {
     )
 }
 
+/// The header part of FLV file.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FLVFileHeader {
     /// Signature bytes are always "FLV" (0x46, 0x4c, 0x56).
@@ -67,6 +71,7 @@ pub fn flv_file_header(input: &[u8]) -> IResult<&[u8], FLVFileHeader> {
     )
 }
 
+/// The body part of FLV file.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FLVFileBody<'a> {
     /// The size of the first previous tag is always 0.
@@ -90,6 +95,9 @@ pub fn flv_file_body(input: &[u8]) -> IResult<&[u8], FLVFileBody> {
     )
 }
 
+/// The FLV tag has three types: `script tag`, `audio tag` and `video tag`.
+/// Each tag contains tag header and tag data.
+/// The structure of each type of tag header is the same.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FLVTag<'a> {
     pub header: FLVTagHeader,
@@ -115,6 +123,7 @@ pub fn flv_tag(input: &[u8]) -> IResult<&[u8], FLVTag> {
     )
 }
 
+/// The tag header part of FLV tag.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FLVTagHeader {
     /// Reserved    2 bits  Reserved for FMS, should be 0.
@@ -134,6 +143,7 @@ pub struct FLVTagHeader {
     pub stream_id: u32,
 }
 
+/// The type of FLV tag.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum FLVTagType {
     Audio,  // 0x08
@@ -167,6 +177,7 @@ pub fn flv_tag_header(input: &[u8]) -> IResult<&[u8], FLVTagHeader> {
     )
 }
 
+/// The tag data part of FLV tag.
 #[derive(Debug, Clone, PartialEq)]
 pub enum FLVTagData<'a> {
     Audio(AudioTag<'a>),
@@ -183,6 +194,7 @@ pub fn flv_tag_data(input: &[u8], tag_type: FLVTagType, size: usize) -> IResult<
 }
 
 // ----------------------------------------------------------------------------
+/// The tag data part of `audio` FLV tag, including `tag data header` and `tag data body`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AudioTag<'a> {
     pub header: AudioTagHeader, // 8 bits.
@@ -203,6 +215,7 @@ pub fn audio_tag(input: &[u8], size: usize) -> IResult<&[u8], AudioTag> {
     )
 }
 
+/// The `tag data header` part of `audio` FLV tag data.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct AudioTagHeader {
     pub sound_format: SoundFormat, // 4 bits.
@@ -211,6 +224,7 @@ pub struct AudioTagHeader {
     pub sound_type: SoundType,     // 1 bit.
 }
 
+/// The audio format.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum SoundFormat {
     PcmPlatformEndian,   // 0
@@ -229,6 +243,7 @@ pub enum SoundFormat {
     DeviceSpecific,      // 15
 }
 
+/// The audio sampling rate.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum SoundRate {
     _5_5KHZ, // 0
@@ -237,12 +252,14 @@ pub enum SoundRate {
     _44KHZ,  // 3
 }
 
+/// The size of each audio sample.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum SoundSize {
     _8Bit,  // 0
     _16Bit, // 1
 }
 
+/// The type of audio, including mono and stereo.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum SoundType {
     Mono,   // 0
@@ -301,6 +318,7 @@ pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHea
     ))
 }
 
+/// The `tag data body` part of `audio` FLV tag data.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AudioTagBody<'a> {
     pub data: &'a [u8],
@@ -319,6 +337,7 @@ pub fn audio_tag_body(input: &[u8], size: usize) -> IResult<&[u8], AudioTagBody>
     ))
 }
 
+/// The `tag data body` part of `audio` FLV tag data whose `SoundFormat` is 10 -- AAC.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AACAudioPacket<'a> {
     /// Only useful when sound format is 10 -- AAC.
@@ -326,6 +345,7 @@ pub struct AACAudioPacket<'a> {
     pub aac_data: &'a [u8],
 }
 
+/// The type of AAC packet.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum AACPacketType {
     SequenceHeader, // 0
@@ -359,6 +379,7 @@ pub fn aac_audio_packet(input: &[u8], size: usize) -> IResult<&[u8], AACAudioPac
 }
 
 // ----------------------------------------------------------------------------
+/// The tag data part of `video` FLV tag, including `tag data header` and `tag data body`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct VideoTag<'a> {
     pub header: VideoTagHeader, // 8 bits.
@@ -379,12 +400,14 @@ pub fn video_tag(input: &[u8], size: usize) -> IResult<&[u8], VideoTag> {
     )
 }
 
+/// The `tag data header` part of `video` FLV tag data.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct VideoTagHeader {
     pub frame_type: FrameType, // 4 bits.
     pub codec_id: CodecID,     // 4 bits.
 }
 
+/// The type of video frame.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum FrameType {
     Key,             // 1
@@ -395,6 +418,7 @@ pub enum FrameType {
     Unknown,         // Others
 }
 
+/// The code identifier of video.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CodecID {
     //    RGB,          // 0
@@ -451,6 +475,7 @@ pub fn video_tag_header(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHea
     ))
 }
 
+/// The `tag data body` part of `video` FLV tag data.
 #[derive(Debug, Clone, PartialEq)]
 pub struct VideoTagBody<'a> {
     pub data: &'a [u8],
@@ -469,6 +494,7 @@ pub fn video_tag_body(input: &[u8], size: usize) -> IResult<&[u8], VideoTagBody>
     ))
 }
 
+/// The `tag data body` part of `video` FLV tag data whose `CodecID` is 7 -- AVC.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AVCVideoPacket<'a> {
     /// Only useful when CodecID is 7 -- AVC.
@@ -481,6 +507,7 @@ pub struct AVCVideoPacket<'a> {
     pub avc_data: &'a [u8],
 }
 
+/// The type of AVC packet.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum AVCPacketType {
     SequenceHeader, // 0
@@ -522,13 +549,16 @@ pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AVCVideoPac
 }
 
 // ----------------------------------------------------------------------------
+/// The tag data part of `script` FLV tag, including `name` and `value`.
+/// The `name` is a `ScriptDataValue` enum whose type is `String`.
+/// The `value` is a `ScriptDataValue` enum whose type is `ECMAArray`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScriptTag<'a> {
     /// Method or object name.
     /// ScriptTagValue.Type = 2 (String)
     pub name: &'a str,
     /// AMF arguments or object properties.
-    /// ScriptTagValue.Type = 8 (ECMA array)
+    /// ScriptTagValue.Type = 8 (ECMAArray)
     pub value: ScriptDataValue<'a>,
 }
 
@@ -550,6 +580,7 @@ pub fn script_tag(input: &[u8], _size: usize) -> IResult<&[u8], ScriptTag> {
     )
 }
 
+/// The `ScriptDataValue` enum.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ScriptDataValue<'a> {
     Number(f64),                                  // 0
@@ -607,6 +638,8 @@ pub fn script_data_string(input: &[u8]) -> IResult<&[u8], &str> {
     map_res!(input, length_bytes!(be_u16), str::from_utf8)
 }
 
+/// The `ScriptDataObjectProperty` is the component of `Object` and `ECMAArray`,
+/// which are a kind of `ScriptDataValue`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScriptDataObjectProperty<'a> {
     pub property_name: &'a str,
@@ -677,6 +710,7 @@ pub fn script_data_strict_array(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataVa
     )
 }
 
+/// The `ScriptDataDate` is a kind of `ScriptDataValue`.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct ScriptDataDate {
     /// Number of milliseconds since UNIX_EPOCH.

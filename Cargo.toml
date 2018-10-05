@@ -8,11 +8,16 @@ readme = "README.md"
 license = "MIT"
 keywords = ["flv", "parser"]
 
-[[bin]]
-name = "main"
-path = "src/main.rs"
+[badges]
+travis-ci = { repository = "koushiro/flvparser", branch = "master" }
+appveyor = { repository = "koushiro/flvparser", branch = "master", service = "github" }
+maintenance = { status = "actively-developed" }
 
 [dependencies]
 nom = "4.0"
 clap = "2"
 prettytable-rs = "^0.8"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"

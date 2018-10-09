@@ -6,10 +6,10 @@
 ///
 /// ```rust
 /// extern crate flvparser;
-/// use flvparser::{FLVFile, FLVFileHeader, parse_flv_file};
+/// use flvparser::*;
 ///
 /// fn main() {
-///     let flv_file: FLVFile = parse_flv_file(include_bytes!("../assets/test.flv")).unwrap().1;
+///     let flv_file = FLVParser::parse(include_bytes!("../assets/test.flv")).unwrap();
 ///     assert_eq!(
 ///         flv_file.header,
 ///         FLVFileHeader {

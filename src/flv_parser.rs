@@ -1,13 +1,23 @@
 /// Parse the structure of the contents of FLV files.
 ///
 /// [The FLV File Format Spec](https://www.adobe.com/content/dam/acom/en/devnet/flv/video_file_format_spec_v10_1.pdf)
-
 use std::str;
 
 use nom::{
     be_u8, be_u16, be_u24, be_u32, be_i16, be_i24, be_f64,
     IResult, Err as NomErr, Needed
 };
+
+pub struct FLVParser {}
+
+impl FLVParser {
+    pub fn parse(input: &[u8]) -> Result<FLVFile, String> {
+        match parse_flv_file(input) {
+            Ok((_, flv_file)) => Ok(flv_file),
+            Err(e) => Err(format!("Fail to parse flv file: {:?}", e)),
+        }
+    }
+}
 
 /// The FLV file structure, including header and body.
 #[derive(Debug, Clone, PartialEq)]
@@ -16,6 +26,7 @@ pub struct FLVFile<'a> {
     pub body: FLVFileBody<'a>,
 }
 
+//pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
 pub fn parse_flv_file(input: &[u8]) -> IResult<&[u8], FLVFile> {
     do_parse!(
         input,
@@ -146,9 +157,9 @@ pub struct FLVTagHeader {
 /// The type of FLV tag.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum FLVTagType {
-    Audio,  // 0x08
-    Video,  // 0x09
-    Script, // 0x18
+    Audio = 0x08,
+    Video = 0x09,
+    Script = 0x18,
 }
 
 pub fn flv_tag_header(input: &[u8]) -> IResult<&[u8], FLVTagHeader> {

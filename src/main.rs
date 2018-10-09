@@ -6,7 +6,7 @@ extern crate prettytable;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-use flvparser::{FLVFile, parse_flv_file, FLVTagType};
+use flvparser::*;
 use clap::{App, Arg};
 use prettytable::{Table, Row, Cell, Attr, format};
 
@@ -119,11 +119,14 @@ fn main() {
     let mut contents = vec![];
     reader.read_to_end(&mut contents).unwrap();
 
-    let flv_file: FLVFile = parse_flv_file(&contents).unwrap().1;
-
-    if matches.is_present("print") {
-        print_table(&flv_file, true);
-    } else {
-        print_table(&flv_file, false);
+    match FLVParser::parse(&contents) {
+        Ok(flv_file) => {
+            if matches.is_present("print") {
+                print_table(&flv_file, true);
+            } else {
+                print_table(&flv_file, false);
+            }
+        }
+        Err(e) => println!("{:?}", e),
     }
 }

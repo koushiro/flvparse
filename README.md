@@ -15,7 +15,7 @@ extern crate flvparser;
 use flvparser::{FLVFile, parse_flv_file};
 
 fn main() {
-    let flv_file: FLVFile = parse_flv_file(include_bytes!("assets/test.flv")).unwrap().1;
+    let flv_file = FLVParser::parse(include_bytes!("assets/test.flv")).unwrap();
     // ...
 }
 ```

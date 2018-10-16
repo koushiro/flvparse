@@ -12,7 +12,7 @@ A FLV file parser written in Rust with [nom](https://github.com/Geal/nom).
 
 ```rust
 extern crate flvparser;
-use flvparser::{FLVFile, parse_flv_file};
+use flvparser::*;
 
 fn main() {
     let flv_file = FLVParser::parse(include_bytes!("assets/test.flv")).unwrap();

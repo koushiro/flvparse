@@ -13,7 +13,7 @@ use prettytable::{Table, Row, Cell, Attr, format};
 pub fn print_table(flv_file: &FLVFile, print_body: bool) {
     let mut header = Table::new();
     header.set_titles(Row::new(vec![
-        Cell::new("FLV File Header").with_style(Attr::Bold),
+        Cell::new("FLV File Header").with_style(Attr::Bold)
     ]));
     header.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
     header.add_row(row!(
@@ -45,7 +45,7 @@ pub fn print_table(flv_file: &FLVFile, print_body: bool) {
 
     let mut body = Table::new();
     body.set_titles(Row::new(vec![
-        Cell::new("FLV File Body").with_style(Attr::Bold),
+        Cell::new("FLV File Body").with_style(Attr::Bold)
     ]));
     body.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
     body.add_row(row!(

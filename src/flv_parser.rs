@@ -286,34 +286,34 @@ pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHea
         input,
         bits!(tuple!(
             switch!(take_bits!(u8, 4),
-                    0  => value!(SoundFormat::PcmPlatformEndian)    |
-                    1  => value!(SoundFormat::ADPCM)                |
-                    2  => value!(SoundFormat::MP3)                  |
-                    3  => value!(SoundFormat::PcmLittleEndian)      |
-                    4  => value!(SoundFormat::Nellymoser16kHzMono)  |
-                    5  => value!(SoundFormat::Nellymoser8kHzMono)   |
-                    6  => value!(SoundFormat::Nellymoser)           |
-                    7  => value!(SoundFormat::PcmALaw)              |
-                    8  => value!(SoundFormat::PcmMuLaw)             |
-                    9  => value!(SoundFormat::Reserved)             |
-                    10 => value!(SoundFormat::AAC)                  |
-                    11 => value!(SoundFormat::Speex)                |
-                    14 => value!(SoundFormat::MP3_8kHz)             |
-                    15 => value!(SoundFormat::DeviceSpecific)
+                0  => value!(SoundFormat::PcmPlatformEndian)    |
+                1  => value!(SoundFormat::ADPCM)                |
+                2  => value!(SoundFormat::MP3)                  |
+                3  => value!(SoundFormat::PcmLittleEndian)      |
+                4  => value!(SoundFormat::Nellymoser16kHzMono)  |
+                5  => value!(SoundFormat::Nellymoser8kHzMono)   |
+                6  => value!(SoundFormat::Nellymoser)           |
+                7  => value!(SoundFormat::PcmALaw)              |
+                8  => value!(SoundFormat::PcmMuLaw)             |
+                9  => value!(SoundFormat::Reserved)             |
+                10 => value!(SoundFormat::AAC)                  |
+                11 => value!(SoundFormat::Speex)                |
+                14 => value!(SoundFormat::MP3_8kHz)             |
+                15 => value!(SoundFormat::DeviceSpecific)
             ),
             switch!(take_bits!(u8, 2),
-                    0 => value!(SoundRate::_5_5KHZ) |
-                    1 => value!(SoundRate::_11KHZ)  |
-                    2 => value!(SoundRate::_22KHZ)  |
-                    3 => value!(SoundRate::_44KHZ)
+                0 => value!(SoundRate::_5_5KHZ) |
+                1 => value!(SoundRate::_11KHZ)  |
+                2 => value!(SoundRate::_22KHZ)  |
+                3 => value!(SoundRate::_44KHZ)
             ),
             switch!(take_bits!(u8, 1),
-                    0 => value!(SoundSize::_8Bit)   |
-                    1 => value!(SoundSize::_16Bit)
+                0 => value!(SoundSize::_8Bit)   |
+                1 => value!(SoundSize::_16Bit)
             ),
             switch!(take_bits!(u8, 1),
-                    0 => value!(SoundType::Mono)    |
-                    1 => value!(SoundType::Stereo)
+                0 => value!(SoundType::Mono)    |
+                1 => value!(SoundType::Stereo)
             )
         ))
     );
@@ -432,17 +432,13 @@ pub enum FrameType {
 /// The code identifier of video.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CodecID {
-    //    RGB,          // 0
-    //    JPEG,         // 1
     SorensonH263, // 2
     Screen1,      // 3
     VP6,          // 4
     VP6Alpha,     // 5
     Screen2,      // 6
     AVC,          // 7, MPEG-4 Part 10 AVC / H.264
-    //    H263,         // 8
-    //    MPEG4Part2,   // 9
-    Unknown, // Others
+    Unknown,      // Others
 }
 
 pub fn video_tag_header(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHeader> {
@@ -454,25 +450,21 @@ pub fn video_tag_header(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHea
         input,
         bits!(tuple!(
             switch!(take_bits!(u8, 4),
-                    1  => value!(FrameType::Key)                |
-                    2  => value!(FrameType::Inter)              |
-                    3  => value!(FrameType::DisposableInter)    |
-                    4  => value!(FrameType::Generated)          |
-                    5  => value!(FrameType::Command)            |
-                    _  => value!(FrameType::Unknown)
+                1  => value!(FrameType::Key)                |
+                2  => value!(FrameType::Inter)              |
+                3  => value!(FrameType::DisposableInter)    |
+                4  => value!(FrameType::Generated)          |
+                5  => value!(FrameType::Command)            |
+                _  => value!(FrameType::Unknown)
             ),
             switch!(take_bits!(u8, 4),
-//                    0 => value!(CodecID::RGB)           |
-//                    1 => value!(CodecID::JPEG)          |
-                    2 => value!(CodecID::SorensonH263)  |
-                    3 => value!(CodecID::Screen1)       |
-                    4 => value!(CodecID::VP6)           |
-                    5 => value!(CodecID::VP6Alpha)      |
-                    6 => value!(CodecID::Screen2)       |
-                    7 => value!(CodecID::AVC)           |
-//                    8 => value!(CodecID::H263)          |
-//                    9 => value!(CodecID::MPEG4Part2)    |
-                    _ => value!(CodecID::Unknown)
+                2 => value!(CodecID::SorensonH263)  |
+                3 => value!(CodecID::Screen1)       |
+                4 => value!(CodecID::VP6)           |
+                5 => value!(CodecID::VP6Alpha)      |
+                6 => value!(CodecID::Screen2)       |
+                7 => value!(CodecID::AVC)           |
+                _ => value!(CodecID::Unknown)
             )
         ))
     );
@@ -544,7 +536,7 @@ pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AVCVideoPac
                 1 => value!(AVCPacketType::NALU)            |
                 2 => value!(AVCPacketType::EndOfSequence)   |
                 _ => value!(AVCPacketType::Unknown)
-                ),
+            ),
             be_i24
         )
     );
@@ -1076,11 +1068,6 @@ mod tests {
         );
     }
 
-    //    #[test]
-    //    fn test_aac_audio_packet() {
-    //
-    //    }
-
     #[test]
     fn test_video_tag() {
         // video tag header (the second tag in TEST_FLV_FILE)
@@ -1183,11 +1170,6 @@ mod tests {
             ))
         );
     }
-
-    //    #[test]
-    //    fn test_avc_video_packet() {
-    //
-    //    }
 
     macro_rules! obj_prop {
         ($name:expr, $data:expr) => {

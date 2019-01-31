@@ -14,7 +14,7 @@ appveyor = { repository = "koushiro/flvparser", branch = "master", service = "gi
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-nom = "4.0"
+nom = "4.2"
 clap = "2"
 prettytable-rs = "^0.8"
 

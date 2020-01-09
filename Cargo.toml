@@ -9,10 +9,17 @@ description = "A FLV file parsing library written in Rust"
 readme = "README.md"
 license = "MIT"
 keywords = ["flv", "parser", "nom"]
-include = ["src/*", "Cargo.toml", "LICENSE", "README.md"]
+include = ["src/*", "Cargo.toml", "LICENSE", "README.md", ".gitignore"]
+
+[features]
+default = ["std"]
+# Waiting for https://github.com/Geal/nom/pull/1102 to be merged,
+# you can use alloc feature on the stable version of rust 1.36+
+alloc = ["nom/alloc"]
+std = ["alloc", "nom/std"]
 
 [dependencies]
-nom = { version = "5", default-features = false, features = ["std"] }
+nom = { version = "5", default-features = false }
 
 [dev-dependencies]
 structopt = "0.3"

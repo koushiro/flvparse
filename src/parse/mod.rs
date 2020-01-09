@@ -7,6 +7,9 @@ mod audio;
 mod script;
 mod video;
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+
 use nom::{
     number::streaming::{be_u24, be_u32, be_u8},
     IResult,

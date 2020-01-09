@@ -1,6 +1,8 @@
 // Copyright 2019-2020 koushiro. Licensed under MIT.
 
-use std::str;
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
+use core::str;
 
 use nom::{
     number::streaming::{be_f64, be_i16, be_u16, be_u32, be_u8},

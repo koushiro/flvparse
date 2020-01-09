@@ -5,6 +5,10 @@
 //! A FLV file parser written in Rust with nom.
 
 #![deny(missing_docs)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+extern crate alloc;
 
 #[macro_use]
 extern crate nom;

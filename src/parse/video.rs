@@ -6,7 +6,7 @@ use nom::{
 };
 
 /// The tag data part of `video` FLV tag, including `tag data header` and `tag data body`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VideoTag<'a> {
     /// The header part of `video` FLV tag.
     pub header: VideoTagHeader, // 8 bits.
@@ -14,23 +14,23 @@ pub struct VideoTag<'a> {
     pub body: VideoTagBody<'a>,
 }
 
-///
-pub fn video_tag(input: &[u8], size: usize) -> IResult<&[u8], VideoTag> {
-    do_parse!(
-        input,
-        // VideoTagHeader
-        header: call!(video_tag_header, size)      >>
-        // VideoTagBody
-        body:   call!(video_tag_body, size - 1)    >>
-        (VideoTag {
-            header,
-            body,
-        })
-    )
+impl<'a> VideoTag<'a> {
+    /// Parse video tag data.
+    pub fn parse(input: &'a [u8], size: usize) -> IResult<&'a [u8], VideoTag<'a>> {
+        do_parse!(
+            input,
+            // parse video tag data header
+            header: call!(VideoTagHeader::parse, size) >>
+            // parse video tag data body
+            body: call!(VideoTagBody::parse, size - 1) >>
+
+            (VideoTag {header, body })
+        )
+    }
 }
 
 /// The `tag data header` part of `video` FLV tag data.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VideoTagHeader {
     /// The frame type of `video` FLV tag, 4 bits.
     pub frame_type: FrameType,
@@ -39,7 +39,7 @@ pub struct VideoTagHeader {
 }
 
 /// The type of video frame.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum FrameType {
     /// 1, Key frame.
     Key,
@@ -56,7 +56,7 @@ pub enum FrameType {
 }
 
 /// The code identifier of video.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum CodecID {
     /// 2, SorensonH263
     SorensonH263,
@@ -74,67 +74,73 @@ pub enum CodecID {
     Unknown,
 }
 
-///
-pub fn video_tag_header(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHeader> {
-    if size < 1 {
-        return Err(NomErr::Incomplete(Needed::Size(1)));
-    }
+impl VideoTagHeader {
+    /// Parse video tag data header.
+    pub fn parse(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHeader> {
+        if size < 1 {
+            return Err(NomErr::Incomplete(Needed::Size(1)));
+        }
 
-    let (remain, (frame_type, codec_id)) = try_parse!(
-        input,
-        bits!(tuple!(
-            switch!(take_bits!(4u8),
-                1  => value!(FrameType::Key)                |
-                2  => value!(FrameType::Inter)              |
-                3  => value!(FrameType::DisposableInter)    |
-                4  => value!(FrameType::Generated)          |
-                5  => value!(FrameType::Command)            |
-                _  => value!(FrameType::Unknown)
-            ),
-            switch!(take_bits!(4u8),
-                2 => value!(CodecID::SorensonH263)  |
-                3 => value!(CodecID::Screen1)       |
-                4 => value!(CodecID::VP6)           |
-                5 => value!(CodecID::VP6Alpha)      |
-                6 => value!(CodecID::Screen2)       |
-                7 => value!(CodecID::AVC)           |
-                _ => value!(CodecID::Unknown)
-            )
+        let (remain, (frame_type, codec_id)) = try_parse!(
+            input,
+            bits!(tuple!(
+                // parse frame type
+                switch!(take_bits!(4u8),
+                    1  => value!(FrameType::Key)             |
+                    2  => value!(FrameType::Inter)           |
+                    3  => value!(FrameType::DisposableInter) |
+                    4  => value!(FrameType::Generated)       |
+                    5  => value!(FrameType::Command)         |
+                    _  => value!(FrameType::Unknown)
+                ),
+                // parse code id
+                switch!(take_bits!(4u8),
+                    2 => value!(CodecID::SorensonH263) |
+                    3 => value!(CodecID::Screen1)      |
+                    4 => value!(CodecID::VP6)          |
+                    5 => value!(CodecID::VP6Alpha)     |
+                    6 => value!(CodecID::Screen2)      |
+                    7 => value!(CodecID::AVC)          |
+                    _ => value!(CodecID::Unknown)
+                )
+            ))
+        );
+
+        Ok((
+            remain,
+            VideoTagHeader {
+                frame_type,
+                codec_id,
+            },
         ))
-    );
-
-    Ok((
-        remain,
-        VideoTagHeader {
-            frame_type,
-            codec_id,
-        },
-    ))
+    }
 }
 
 /// The `tag data body` part of `video` FLV tag data.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VideoTagBody<'a> {
     /// The actual `tag data body` of `video` FLV tag data.
     pub data: &'a [u8],
 }
 
-///
-pub fn video_tag_body(input: &[u8], size: usize) -> IResult<&[u8], VideoTagBody> {
-    if input.len() < size {
-        return Err(NomErr::Incomplete(Needed::Size(size)));
-    }
+impl<'a> VideoTagBody<'a> {
+    /// Parse video tag data body.
+    pub fn parse(input: &'a [u8], size: usize) -> IResult<&'a [u8], VideoTagBody<'a>> {
+        if input.len() < size {
+            return Err(NomErr::Incomplete(Needed::Size(size)));
+        }
 
-    Ok((
-        &input[size..],
-        VideoTagBody {
-            data: &input[0..size],
-        },
-    ))
+        Ok((
+            &input[size..],
+            VideoTagBody {
+                data: &input[0..size],
+            },
+        ))
+    }
 }
 
 /// The `tag data body` part of `video` FLV tag data whose `CodecID` is 7 -- AVC.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AvcVideoPacket<'a> {
     /// Only useful when CodecID is 7 -- AVC, 1 byte.
     pub packet_type: AvcPacketType,
@@ -149,7 +155,7 @@ pub struct AvcVideoPacket<'a> {
 }
 
 /// The type of AVC packet.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum AvcPacketType {
     /// 0, SequenceHeader.
     SequenceHeader,

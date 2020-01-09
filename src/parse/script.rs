@@ -15,7 +15,7 @@ const OBJECT_END_MARKER: [u8; 3] = [0x00, 0x00, 0x09];
 /// The tag data part of `script` FLV tag, including `name` and `value`.
 /// The `name` is a `ScriptDataValue` enum whose type is `String`.
 /// The `value` is a `ScriptDataValue` enum whose type is `ECMAArray`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ScriptTag<'a> {
     /// Method or object name.
     /// ScriptTagValue.Type = 2 (String)
@@ -25,22 +25,22 @@ pub struct ScriptTag<'a> {
     pub value: ScriptDataValue<'a>,
 }
 
-///
-pub fn script_tag(input: &[u8], _size: usize) -> IResult<&[u8], ScriptTag> {
-    do_parse!(
-        input,
-        // ScriptTagValue.Type = 2 (String)
-        tag!(SCRIPT_DATA_VALUE_STRING_TYPE) >>
-        // Method or object name.
-        name:  script_data_string           >>
-        // AMF arguments or object properties.
-        // ScriptTagValue.Type = 8 (ECMA array)
-        value: script_data_value            >>
-        (ScriptTag {
-            name,
-            value,
-        })
-    )
+impl<'a> ScriptTag<'a> {
+    /// Parse script tag data.
+    pub fn parse(input: &'a [u8], _size: usize) -> IResult<&'a [u8], ScriptTag<'a>> {
+        do_parse!(
+            input,
+            // ScriptTagValue.Type = 2 (String)
+            tag!(SCRIPT_DATA_VALUE_STRING_TYPE) >>
+            // Method or object name.
+            name: call!(ScriptDataValue::parse_string) >>
+            // AMF arguments or object properties.
+            // ScriptTagValue.Type = 8 (ECMA array)
+            value: call!(ScriptDataValue::parse) >>
+
+            (ScriptTag { name, value })
+        )
+    }
 }
 
 /// The `ScriptDataValue` enum.
@@ -72,132 +72,139 @@ pub enum ScriptDataValue<'a> {
     LongString(&'a str),
 }
 
-///
-pub fn script_data_value(input: &[u8]) -> IResult<&[u8], ScriptDataValue> {
-    //    println!("script_data_value input = {:?}", input);
-    switch!(input,
-        // Type
-        be_u8,
-        // Script Data Value
-        0  => map!(script_data_number, ScriptDataValue::Number)                     |
-        1  => map!(script_data_boolean, |v| ScriptDataValue::Boolean(v != 0))       |
-        2  => map!(script_data_string, ScriptDataValue::String)                     |
-        3  => map!(script_data_object, ScriptDataValue::Object)                     |
-        4  => value!(ScriptDataValue::MovieClip)                                    |
-        5  => value!(ScriptDataValue::Null)                                         |
-        6  => value!(ScriptDataValue::Undefined)                                    |
-        7  => map!(script_data_reference, ScriptDataValue::Reference)               |
-        8  => map!(script_data_ecma_array, ScriptDataValue::ECMAArray)              |
-        10 => map!(script_data_strict_array, ScriptDataValue::StrictArray)          |
-        11 => map!(script_data_date, ScriptDataValue::Date)                         |
-        12 => map!(script_data_long_string, ScriptDataValue::LongString)
-    )
-}
+impl<'a> ScriptDataValue<'a> {
+    /// Parse script data value.
+    pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], ScriptDataValue<'a>> {
+        switch!(input,
+            // parse script value type
+            be_u8,
+            // parse script data value
+            0  => map!(Self::parse_number, ScriptDataValue::Number)               |
+            1  => map!(Self::parse_boolean, |v| ScriptDataValue::Boolean(v != 0)) |
+            2  => map!(Self::parse_string, ScriptDataValue::String)               |
+            3  => map!(Self::parse_object, ScriptDataValue::Object)               |
+            4  => value!(ScriptDataValue::MovieClip)                              |
+            5  => value!(ScriptDataValue::Null)                                   |
+            6  => value!(ScriptDataValue::Undefined)                              |
+            7  => map!(Self::parse_reference, ScriptDataValue::Reference)         |
+            8  => map!(Self::parse_ecma_array, ScriptDataValue::ECMAArray)        |
+            10 => map!(Self::parse_strict_array, ScriptDataValue::StrictArray)    |
+            11 => map!(Self::parse_date, ScriptDataValue::Date)                   |
+            12 => map!(Self::parse_long_string, ScriptDataValue::LongString)
+        )
+    }
 
-///
-pub fn script_data_number(input: &[u8]) -> IResult<&[u8], f64> {
-    //    println!("script_data_number input = {:?}", input);
-    be_f64(input)
-}
+    /// Parse script number value.
+    pub fn parse_number(input: &[u8]) -> IResult<&[u8], f64> {
+        be_f64(input)
+    }
 
-///
-pub fn script_data_boolean(input: &[u8]) -> IResult<&[u8], u8> {
-    //    println!("script_data_boolean input = {:?}", input);
-    be_u8(input)
-}
+    /// Parse script boolean value.
+    pub fn parse_boolean(input: &[u8]) -> IResult<&[u8], u8> {
+        be_u8(input)
+    }
 
-///
-pub fn script_data_reference(input: &[u8]) -> IResult<&[u8], u16> {
-    //    println!("script_data_reference input = {:?}", input);
-    be_u16(input)
-}
+    /// Parse script string value.
+    pub fn parse_string(input: &[u8]) -> IResult<&[u8], &str> {
+        map_res!(input, length_data!(be_u16), str::from_utf8)
+    }
 
-///
-pub fn script_data_string(input: &[u8]) -> IResult<&[u8], &str> {
-    //    println!("script_data_string input = {:?}", input);
-    map_res!(input, length_data!(be_u16), str::from_utf8)
+    /// Parse script object value.
+    pub fn parse_object(input: &'a [u8]) -> IResult<&'a [u8], Vec<ScriptDataObjectProperty<'a>>> {
+        terminated!(
+            input,
+            // parse object properties
+            many0!(Self::parse_object_property),
+            // parse object end marker
+            call!(Self::parse_object_end_marker)
+        )
+    }
+
+    /// Parse script object property.
+    fn parse_object_property(input: &'a [u8]) -> IResult<&'a [u8], ScriptDataObjectProperty<'a>> {
+        do_parse!(
+            input,
+            // parse object property name
+            name: call!(Self::parse_string) >>
+            // parse object property value
+            value: call!(Self::parse) >>
+
+            (ScriptDataObjectProperty { name, value })
+        )
+    }
+
+    /// Parse script object end marker.
+    fn parse_object_end_marker(input: &[u8]) -> IResult<&[u8], &[u8]> {
+        tag!(input, OBJECT_END_MARKER)
+    }
+
+    /// Parse script reference value.
+    pub fn parse_reference(input: &[u8]) -> IResult<&[u8], u16> {
+        be_u16(input)
+    }
+
+    /// Parse script ECMA array value.
+    pub fn parse_ecma_array(
+        input: &'a [u8],
+    ) -> IResult<&'a [u8], Vec<ScriptDataObjectProperty<'a>>> {
+        // The list contains approximately ECMA Array Length number of items.
+        do_parse!(
+            input,
+            // parse ECMA array length
+            _length: be_u32 >>
+            // parse object Properties and Object End marker
+            object: call!(Self::parse_object) >>
+
+            (object)
+        )
+    }
+
+    /// Parse script strict array value.
+    pub fn parse_strict_array(input: &'a [u8]) -> IResult<&'a [u8], Vec<ScriptDataValue<'a>>> {
+        // The list shall contain Strict Array Length number of values.
+        // No terminating record follows the list.
+        do_parse!(
+            input,
+            // parse strict array length
+            length: be_u32 >>
+            // parse values
+            value: count!(call!(Self::parse), length as usize) >>
+
+            (value)
+        )
+    }
+
+    /// Parse script date value.
+    pub fn parse_date(input: &[u8]) -> IResult<&[u8], ScriptDataDate> {
+        do_parse!(
+            input,
+            // Number of milliseconds since UNIX_EPOCH.
+            date_time: be_f64 >>
+            // Local time offset in minutes from UTC.
+            local_date_time_offset: be_i16 >>
+
+            (ScriptDataDate { date_time, local_date_time_offset })
+        )
+    }
+
+    /// Parse script long string value.
+    pub fn parse_long_string(input: &[u8]) -> IResult<&[u8], &str> {
+        map_res!(input, length_data!(be_u32), str::from_utf8)
+    }
 }
 
 /// The `ScriptDataObjectProperty` is the component of `Object` and `ECMAArray`,
 /// which are a kind of `ScriptDataValue`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ScriptDataObjectProperty<'a> {
-    ///
-    pub property_name: &'a str,
-    ///
-    pub property_data: ScriptDataValue<'a>,
-}
-
-///
-pub fn script_data_object_property(input: &[u8]) -> IResult<&[u8], ScriptDataObjectProperty> {
-    //    println!("script_data_object_property input = {:?}", input);
-    do_parse!(
-        input,
-        // Object property name
-        name: script_data_string    >>
-        // Object property data
-        value: script_data_value    >>
-        (ScriptDataObjectProperty {
-            property_name: name,
-            property_data: value,
-        })
-    )
-}
-
-///
-pub fn script_data_object(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataObjectProperty>> {
-    //    println!("==============================================================");
-    //    println!("script_data_object input = {:?}", input);
-    // Script Data Object Property[] and Script Data Object End
-    terminated!(
-        input,
-        many0!(script_data_object_property),
-        script_data_object_end_marker
-    )
-}
-
-///
-pub fn script_data_object_end_marker(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    //    println!("script_data_object_end_marker input = {:?}", input);
-    tag!(input, OBJECT_END_MARKER)
-}
-
-///
-pub fn script_data_ecma_array(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataObjectProperty>> {
-    //    println!("==============================================================");
-    //    println!("script_data_ecma_array input = {:?}", input);
-    // The list contains approximately ECMA Array Length number of items.
-    do_parse!(
-        input,
-        // ECMA Array Length
-        _length: be_u32 >>
-        // Script Data Object Property[] and Script Data Object End
-        value: terminated!(
-            many0!(script_data_object_property),
-            script_data_object_end_marker
-        )               >>
-        (value)
-    )
-}
-
-///
-pub fn script_data_strict_array(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataValue>> {
-    //    println!("==============================================================");
-    //    println!("script_data_strict_array input = {:?}", input);
-    // The list shall contain Strict Array Length number of values.
-    // No terminating record follows the list.
-    do_parse!(
-        input,
-        // Strict Array Length
-        length: be_u32                                      >>
-        // Script Data Value[]
-        value: count!(script_data_value, length as usize)   >>
-        (value)
-    )
+    /// Object property name.
+    pub name: &'a str,
+    /// Object property value.
+    pub value: ScriptDataValue<'a>,
 }
 
 /// The `ScriptDataDate` is a kind of `ScriptDataValue`.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ScriptDataDate {
     /// Number of milliseconds since UNIX_EPOCH.
     // SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis()
@@ -206,26 +213,4 @@ pub struct ScriptDataDate {
     /// For time zones located west of Greenwich, this value is a negative number.
     /// Time zones east of Greenwich are positive.
     pub local_date_time_offset: i16,
-}
-
-///
-pub fn script_data_date(input: &[u8]) -> IResult<&[u8], ScriptDataDate> {
-    //    println!("script_data_date input = {:?}", input);
-    do_parse!(
-        input,
-        // Number of milliseconds since UNIX_EPOCH.
-        date_time:              be_f64  >>
-        // Local time offset in minutes from UTC.
-        local_date_time_offset: be_i16  >>
-        (ScriptDataDate {
-            date_time,
-            local_date_time_offset,
-        })
-    )
-}
-
-///
-pub fn script_data_long_string(input: &[u8]) -> IResult<&[u8], &str> {
-    //    println!("script_data_long_string input = {:?}", input);
-    map_res!(input, length_data!(be_u32), str::from_utf8)
 }

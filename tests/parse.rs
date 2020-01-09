@@ -38,10 +38,10 @@ fn test_flv_file_header() {
     let end = FLV_FILE_HEADER_LENGTH;
     println!(
         "flv file header = {:?}",
-        flv_file_header(&TEST_FLV_FILE[..end]).unwrap().1
+        FlvFileHeader::parse(&TEST_FLV_FILE[..end]).unwrap().1
     );
     assert_eq!(
-        flv_file_header(&TEST_FLV_FILE[..FLV_FILE_HEADER_LENGTH]),
+        FlvFileHeader::parse(&TEST_FLV_FILE[..FLV_FILE_HEADER_LENGTH]),
         Ok((
             &b""[..],
             FlvFileHeader {
@@ -59,7 +59,7 @@ fn test_flv_file_header() {
 #[test]
 fn test_flv_file_body() {
     let start = FLV_FILE_HEADER_LENGTH;
-    let body = flv_file_body(&TEST_FLV_FILE[start..]).unwrap().1;
+    let body = FlvFileBody::parse(&TEST_FLV_FILE[start..]).unwrap().1;
     assert_eq!(body.first_previous_tag_size, 0);
     assert_eq!(body.tags[0].1, 11 + 1030);
     assert_eq!(body.tags[1].1, 11 + 48);
@@ -80,10 +80,10 @@ fn test_flv_tag() {
     let end: usize = start + FLV_TAG_HEADER_LENGTH + 7;
     println!(
         "flv tag = {:?}",
-        flv_tag(&TEST_FLV_FILE[start..end]).unwrap().1
+        FlvTag::parse(&TEST_FLV_FILE[start..end]).unwrap().1
     );
     assert_eq!(
-        flv_tag(&TEST_FLV_FILE[start..end]),
+        FlvTag::parse(&TEST_FLV_FILE[start..end]),
         Ok((
             &b""[..],
             FlvTag {
@@ -121,10 +121,10 @@ fn test_flv_tag_header() {
     let mut end = start + FLV_TAG_HEADER_LENGTH;
     println!(
         "flv tag header = {:?}",
-        flv_tag_header(&TEST_FLV_FILE[start..end]).unwrap().1
+        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1
     );
     assert_eq!(
-        flv_tag_header(&TEST_FLV_FILE[start..end]),
+        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]),
         Ok((
             &b""[..],
             FlvTagHeader {
@@ -141,10 +141,10 @@ fn test_flv_tag_header() {
     end = start + FLV_TAG_HEADER_LENGTH;
     println!(
         "flv tag header = {:?}",
-        flv_tag_header(&TEST_FLV_FILE[start..end]).unwrap().1
+        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1
     );
     assert_eq!(
-        flv_tag_header(&TEST_FLV_FILE[start..end]),
+        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]),
         Ok((
             &b""[..],
             FlvTagHeader {
@@ -161,10 +161,10 @@ fn test_flv_tag_header() {
     end = start + FLV_TAG_HEADER_LENGTH;
     println!(
         "flv tag header = {:?}",
-        flv_tag_header(&TEST_FLV_FILE[start..end]).unwrap().1
+        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1
     );
     assert_eq!(
-        flv_tag_header(&TEST_FLV_FILE[start..end]),
+        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]),
         Ok((
             &b""[..],
             FlvTagHeader {
@@ -192,12 +192,12 @@ fn test_flv_tag_data() {
     let end = start + 7;
     println!(
         "flv tag data = {:?}",
-        flv_tag_data(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7)
+        FlvTagData::parse(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7)
             .unwrap()
             .1
     );
     assert_eq!(
-        flv_tag_data(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7),
+        FlvTagData::parse(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7),
         Ok((
             &b""[..],
             FlvTagData::Audio(AudioTag {
@@ -232,10 +232,10 @@ fn test_audio_tag() {
     let end = start + 7;
     println!(
         "audio tag = {:?}",
-        audio_tag(&TEST_FLV_FILE[start..end], 7).unwrap().1
+        AudioTag::parse(&TEST_FLV_FILE[start..end], 7).unwrap().1
     );
     assert_eq!(
-        audio_tag(&TEST_FLV_FILE[start..end], 7),
+        AudioTag::parse(&TEST_FLV_FILE[start..end], 7),
         Ok((
             &b""[..],
             AudioTag {
@@ -270,12 +270,12 @@ fn test_audio_tag_header() {
     let end = start + AUDIO_TAG_HEADER_LENGTH;
     println!(
         "audio tag header = {:?}",
-        audio_tag_header(&TEST_FLV_FILE[start..end], AUDIO_TAG_HEADER_LENGTH)
+        AudioTagHeader::parse(&TEST_FLV_FILE[start..end], AUDIO_TAG_HEADER_LENGTH)
             .unwrap()
             .1
     );
     assert_eq!(
-        audio_tag_header(&TEST_FLV_FILE[start..end], AUDIO_TAG_HEADER_LENGTH),
+        AudioTagHeader::parse(&TEST_FLV_FILE[start..end], AUDIO_TAG_HEADER_LENGTH),
         Ok((
             &b""[..],
             // 0xaf = 0b1010 1111, 1 byte
@@ -305,12 +305,12 @@ fn test_audio_tag_body() {
     let end = start + 7 - AUDIO_TAG_HEADER_LENGTH;
     println!(
         "audio tag body = {:?}",
-        audio_tag_body(&TEST_FLV_FILE[start..end], 7 - AUDIO_TAG_HEADER_LENGTH)
+        AudioTagBody::parse(&TEST_FLV_FILE[start..end], 7 - AUDIO_TAG_HEADER_LENGTH)
             .unwrap()
             .1
     );
     assert_eq!(
-        audio_tag_body(&TEST_FLV_FILE[start..end], 7 - AUDIO_TAG_HEADER_LENGTH),
+        AudioTagBody::parse(&TEST_FLV_FILE[start..end], 7 - AUDIO_TAG_HEADER_LENGTH),
         Ok((
             &b""[..],
             // 0x0012 1056 e500, 6 bytes
@@ -333,10 +333,10 @@ fn test_video_tag() {
     let end = start + 48;
     println!(
         "video tag = {:?}",
-        video_tag(&TEST_FLV_FILE[start..end], 48).unwrap().1
+        VideoTag::parse(&TEST_FLV_FILE[start..end], 48).unwrap().1
     );
     assert_eq!(
-        video_tag(&TEST_FLV_FILE[start..end], 48),
+        VideoTag::parse(&TEST_FLV_FILE[start..end], 48),
         Ok((
             &b""[..],
             VideoTag {
@@ -372,12 +372,12 @@ fn test_video_tag_header() {
     let end = start + VIDEO_TAG_HEADER_LENGTH;
     println!(
         "video tag header = {:?}",
-        video_tag_header(&TEST_FLV_FILE[start..end], VIDEO_TAG_HEADER_LENGTH)
+        VideoTagHeader::parse(&TEST_FLV_FILE[start..end], VIDEO_TAG_HEADER_LENGTH)
             .unwrap()
             .1
     );
     assert_eq!(
-        video_tag_header(&TEST_FLV_FILE[start..end], VIDEO_TAG_HEADER_LENGTH),
+        VideoTagHeader::parse(&TEST_FLV_FILE[start..end], VIDEO_TAG_HEADER_LENGTH),
         Ok((
             &b""[..],
             // 0x17 = 0b0001 0111, 1 byte
@@ -402,12 +402,12 @@ fn test_video_tag_body() {
     let end = start + 48 - VIDEO_TAG_HEADER_LENGTH;
     println!(
         "video tag body = {:?}",
-        video_tag_body(&TEST_FLV_FILE[start..end], 48 - VIDEO_TAG_HEADER_LENGTH)
+        VideoTagBody::parse(&TEST_FLV_FILE[start..end], 48 - VIDEO_TAG_HEADER_LENGTH)
             .unwrap()
             .1
     );
     assert_eq!(
-        video_tag_body(&TEST_FLV_FILE[start..end], 48 - VIDEO_TAG_HEADER_LENGTH),
+        VideoTagBody::parse(&TEST_FLV_FILE[start..end], 48 - VIDEO_TAG_HEADER_LENGTH),
         Ok((
             &b""[..],
             // 0x0000 0000 0164 0028 ffe1 001b 6764 0028 acd9 4078
@@ -415,20 +415,20 @@ fn test_video_tag_body() {
             //   0005 68eb ecf2 3c, 47 bytes
             VideoTagBody {
                 data: &b"\x00\x00\x00\x00\x01\x64\x00\x28\xff\xe1\
-                             \x00\x1b\x67\x64\x00\x28\xac\xd9\x40\x78\
-                             \x02\x27\xe5\xc0\x44\x00\x00\x03\x00\x04\
-                             \x00\x00\x03\x00\xc0\x3c\x60\xc6\x58\x01\
-                             \x00\x05\x68\xeb\xec\xf2\x3c"[..],
+                    \x00\x1b\x67\x64\x00\x28\xac\xd9\x40\x78\
+                    \x02\x27\xe5\xc0\x44\x00\x00\x03\x00\x04\
+                    \x00\x00\x03\x00\xc0\x3c\x60\xc6\x58\x01\
+                    \x00\x05\x68\xeb\xec\xf2\x3c"[..],
             }
         ))
     );
 }
 
 macro_rules! obj_prop {
-    ($name:expr, $data:expr) => {
+    ($name:expr, $value:expr) => {
         ScriptDataObjectProperty {
-            property_name: $name,
-            property_data: $data,
+            name: $name,
+            value: $value,
         }
     };
 }
@@ -440,10 +440,10 @@ fn test_script_tag() {
     let end = start + 1030;
     println!(
         "script tag = {:?}",
-        script_tag(&TEST_FLV_FILE[start..end], 1030)
+        ScriptTag::parse(&TEST_FLV_FILE[start..end], 1030)
     );
     assert_eq!(
-        script_tag(&TEST_FLV_FILE[start..end], 1030),
+        ScriptTag::parse(&TEST_FLV_FILE[start..end], 1030),
         Ok((
             &b""[..],
             ScriptTag {
@@ -550,10 +550,10 @@ fn test_script_data_date() {
                              \x00\x08Remain"[..];
     println!(
         "script data date = {:?}",
-        script_data_date(input).unwrap().1
+        ScriptDataValue::parse_date(input).unwrap().1
     );
     assert_eq!(
-        script_data_date(input),
+        ScriptDataValue::parse_date(input),
         Ok((
             &b"Remain"[..],
             ScriptDataDate {
@@ -570,10 +570,10 @@ fn test_script_data_long_string() {
                              Long StringRemain"[..];
     println!(
         "script data long string = {:?}",
-        script_data_long_string(input).unwrap().1
+        ScriptDataValue::parse_long_string(input).unwrap().1
     );
     assert_eq!(
-        script_data_long_string(input),
+        ScriptDataValue::parse_long_string(input),
         Ok((&b"Remain"[..], "Long String"))
     );
 }

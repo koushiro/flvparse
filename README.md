@@ -17,10 +17,10 @@ fn main() {
 }
 ```
 
-For a detailed example, see [example](examples/flvparser.rs).
+For a detailed example, see [example](src/cli.rs).
 
 ```
-cargo run --example flvparser -- --input assets/test.flv
+cargo run --bin flvparser -- --input assets/test.flv
 
 +-----------------+-----------+
 | FLV File Header |           |
@@ -38,7 +38,7 @@ cargo run --example flvparser -- --input assets/test.flv
 ```
 
 ```
-cargo run --example flvparser -- --input assets/test.flv -p
+cargo run --bin flvparser -- --input assets/test.flv -p
 +-----------------+-----------+
 | FLV File Header |           |
 +-----------------+-----------+

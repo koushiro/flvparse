@@ -73,7 +73,7 @@ pub enum ScriptDataValue<'a> {
 }
 
 impl<'a> ScriptDataValue<'a> {
-    /// Parse script data value.
+    /// Parse script tag data value.
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], ScriptDataValue<'a>> {
         switch!(input,
             // parse script value type
@@ -94,22 +94,22 @@ impl<'a> ScriptDataValue<'a> {
         )
     }
 
-    /// Parse script number value.
+    /// Parse script tag data number value.
     pub fn parse_number(input: &[u8]) -> IResult<&[u8], f64> {
         be_f64(input)
     }
 
-    /// Parse script boolean value.
+    /// Parse script tag data boolean value.
     pub fn parse_boolean(input: &[u8]) -> IResult<&[u8], u8> {
         be_u8(input)
     }
 
-    /// Parse script string value.
+    /// Parse script tag data string value.
     pub fn parse_string(input: &[u8]) -> IResult<&[u8], &str> {
         map_res!(input, length_data!(be_u16), str::from_utf8)
     }
 
-    /// Parse script object value.
+    /// Parse script tag data object value.
     pub fn parse_object(input: &'a [u8]) -> IResult<&'a [u8], Vec<ScriptDataObjectProperty<'a>>> {
         terminated!(
             input,
@@ -120,7 +120,7 @@ impl<'a> ScriptDataValue<'a> {
         )
     }
 
-    /// Parse script object property.
+    /// Parse script tag data object property.
     fn parse_object_property(input: &'a [u8]) -> IResult<&'a [u8], ScriptDataObjectProperty<'a>> {
         do_parse!(
             input,
@@ -133,17 +133,17 @@ impl<'a> ScriptDataValue<'a> {
         )
     }
 
-    /// Parse script object end marker.
+    /// Parse script tag data object end marker.
     fn parse_object_end_marker(input: &[u8]) -> IResult<&[u8], &[u8]> {
         tag!(input, OBJECT_END_MARKER)
     }
 
-    /// Parse script reference value.
+    /// Parse script tag data reference value.
     pub fn parse_reference(input: &[u8]) -> IResult<&[u8], u16> {
         be_u16(input)
     }
 
-    /// Parse script ECMA array value.
+    /// Parse script tag data ECMA array value.
     pub fn parse_ecma_array(
         input: &'a [u8],
     ) -> IResult<&'a [u8], Vec<ScriptDataObjectProperty<'a>>> {
@@ -159,7 +159,7 @@ impl<'a> ScriptDataValue<'a> {
         )
     }
 
-    /// Parse script strict array value.
+    /// Parse script tag data strict array value.
     pub fn parse_strict_array(input: &'a [u8]) -> IResult<&'a [u8], Vec<ScriptDataValue<'a>>> {
         // The list shall contain Strict Array Length number of values.
         // No terminating record follows the list.
@@ -174,7 +174,7 @@ impl<'a> ScriptDataValue<'a> {
         )
     }
 
-    /// Parse script date value.
+    /// Parse script tag data date value.
     pub fn parse_date(input: &[u8]) -> IResult<&[u8], ScriptDataDate> {
         do_parse!(
             input,
@@ -187,7 +187,7 @@ impl<'a> ScriptDataValue<'a> {
         )
     }
 
-    /// Parse script long string value.
+    /// Parse script tag data long string value.
     pub fn parse_long_string(input: &[u8]) -> IResult<&[u8], &str> {
         map_res!(input, length_data!(be_u32), str::from_utf8)
     }

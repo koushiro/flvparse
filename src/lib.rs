@@ -19,7 +19,7 @@ mod parse;
 pub use self::error::{Error, Result};
 pub use self::parse::*;
 
-///
+/// A helper function for parsing FLV format.
 pub fn parse(input: &[u8]) -> Result<FlvFile> {
     match FlvFile::parse(input) {
         Ok((_output, flv)) => Ok(flv),

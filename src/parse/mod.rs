@@ -31,7 +31,7 @@ pub struct FlvFile<'a> {
 }
 
 impl<'a> FlvFile<'a> {
-    ///
+    /// Parse FLV file.
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], FlvFile<'a>> {
         do_parse!(
             input,
@@ -66,7 +66,7 @@ pub struct FlvFileHeader {
 }
 
 impl FlvFileHeader {
-    ///
+    /// Parse FLV file header.
     pub fn parse(input: &[u8]) -> IResult<&[u8], FlvFileHeader> {
         do_parse!(
             input,
@@ -102,7 +102,7 @@ pub struct FlvFileBody<'a> {
 
 impl<'a> FlvFileBody<'a> {
     // https://github.com/Geal/nom/issues/790 - many0 returns Incomplete in weird cases.
-    ///
+    /// Parse FLV file body.
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], FlvFileBody<'a>> {
         do_parse!(
             input,
@@ -131,7 +131,7 @@ pub struct FlvTag<'a> {
 }
 
 impl<'a> FlvTag<'a> {
-    ///
+    /// Parse FLV tag.
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], FlvTag<'a>> {
         do_parse!(
             input,
@@ -176,7 +176,7 @@ pub enum FlvTagType {
 }
 
 impl FlvTagHeader {
-    ///
+    /// Parse FLV tag header.
     pub fn parse(input: &[u8]) -> IResult<&[u8], FlvTagHeader> {
         do_parse!(
             input,
@@ -217,7 +217,7 @@ pub enum FlvTagData<'a> {
 }
 
 impl<'a> FlvTagData<'a> {
-    ///
+    /// Parse FLV tag data.
     pub fn parse(
         input: &'a [u8],
         tag_type: FlvTagType,

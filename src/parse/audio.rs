@@ -203,7 +203,7 @@ pub enum AACPacketType {
     Raw,
 }
 
-///
+/// Parse AAC audio packet.
 pub fn aac_audio_packet(input: &[u8], size: usize) -> IResult<&[u8], AACAudioPacket> {
     if input.len() < size {
         return Err(NomErr::Incomplete(Needed::Size(size)));

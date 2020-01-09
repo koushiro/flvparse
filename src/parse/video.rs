@@ -167,7 +167,7 @@ pub enum AvcPacketType {
     Unknown,
 }
 
-///
+/// Parse AVC video packet.
 pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AvcVideoPacket> {
     if input.len() < size {
         return Err(NomErr::Incomplete(Needed::Size(size)));

@@ -10,9 +10,14 @@ A FLV file parser written in Rust with [nom](https://github.com/Geal/nom).
 
 ### Simple example
 
+```toml
+[dependencies]
+flvparse = { git = "https://github.com/koushiro/flvparser" }
+```
+
 ```rust
 fn main() {
-    let flv = flvparser::parse(include_bytes!("assets/test.flv")).unwrap();
+    let flv = flvparse::parse(include_bytes!("assets/test.flv")).unwrap();
     // ...
 }
 ```

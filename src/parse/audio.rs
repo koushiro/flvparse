@@ -1,6 +1,6 @@
 // Copyright 2019-2020 koushiro. Licensed under MIT.
 
-use nom::{be_u8, Err as NomErr, IResult, Needed};
+use nom::{number::streaming::be_u8, Err as NomErr, IResult, Needed};
 
 /// The tag data part of `audio` FLV tag, including `tag data header` and `tag data body`.
 #[derive(Debug, Clone, PartialEq)]
@@ -16,9 +16,9 @@ pub fn audio_tag(input: &[u8], size: usize) -> IResult<&[u8], AudioTag> {
     do_parse!(
         input,
         // AudioTagHeader
-        header: apply!(audio_tag_header, size)      >>
+        header: call!(audio_tag_header, size)      >>
         // AudioTagBody
-        body:   apply!(audio_tag_body, size - 1)    >>
+        body:   call!(audio_tag_body, size - 1)    >>
         (AudioTag {
             header,
             body,
@@ -112,7 +112,7 @@ pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHea
     let (remain, (sound_format, sound_rate, sound_size, sound_type)) = try_parse!(
         input,
         bits!(tuple!(
-            switch!(take_bits!(u8, 4),
+            switch!(take_bits!(4u8),
                 0  => value!(SoundFormat::PcmPlatformEndian)    |
                 1  => value!(SoundFormat::ADPCM)                |
                 2  => value!(SoundFormat::MP3)                  |
@@ -128,17 +128,17 @@ pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHea
                 14 => value!(SoundFormat::MP3_8kHz)             |
                 15 => value!(SoundFormat::DeviceSpecific)
             ),
-            switch!(take_bits!(u8, 2),
+            switch!(take_bits!(2u8),
                 0 => value!(SoundRate::_5_5KHZ) |
                 1 => value!(SoundRate::_11KHZ)  |
                 2 => value!(SoundRate::_22KHZ)  |
                 3 => value!(SoundRate::_44KHZ)
             ),
-            switch!(take_bits!(u8, 1),
+            switch!(take_bits!(1u8),
                 0 => value!(SoundSize::_8Bit)   |
                 1 => value!(SoundSize::_16Bit)
             ),
-            switch!(take_bits!(u8, 1),
+            switch!(take_bits!(1u8),
                 0 => value!(SoundType::Mono)    |
                 1 => value!(SoundType::Stereo)
             )

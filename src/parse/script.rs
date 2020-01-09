@@ -2,7 +2,10 @@
 
 use std::str;
 
-use nom::{be_f64, be_i16, be_u16, be_u32, be_u8, IResult};
+use nom::{
+    number::streaming::{be_f64, be_i16, be_u16, be_u32, be_u8},
+    IResult,
+};
 
 const SCRIPT_DATA_VALUE_STRING_TYPE: [u8; 1] = [0x02];
 const OBJECT_END_MARKER: [u8; 3] = [0x00, 0x00, 0x09];
@@ -110,7 +113,7 @@ pub fn script_data_reference(input: &[u8]) -> IResult<&[u8], u16> {
 ///
 pub fn script_data_string(input: &[u8]) -> IResult<&[u8], &str> {
     //    println!("script_data_string input = {:?}", input);
-    map_res!(input, length_bytes!(be_u16), str::from_utf8)
+    map_res!(input, length_data!(be_u16), str::from_utf8)
 }
 
 /// The `ScriptDataObjectProperty` is the component of `Object` and `ECMAArray`,
@@ -222,5 +225,5 @@ pub fn script_data_date(input: &[u8]) -> IResult<&[u8], ScriptDataDate> {
 ///
 pub fn script_data_long_string(input: &[u8]) -> IResult<&[u8], &str> {
     //    println!("script_data_long_string input = {:?}", input);
-    map_res!(input, length_bytes!(be_u32), str::from_utf8)
+    map_res!(input, length_data!(be_u32), str::from_utf8)
 }

@@ -11,7 +11,7 @@ keywords = ["flv", "parser"]
 exclude = ["asserts/*"]
 
 [dependencies]
-nom = "4"
+nom = "5"
 structopt = "0.3"
 prettytable-rs = "^0.8"
 

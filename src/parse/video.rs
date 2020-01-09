@@ -1,6 +1,9 @@
 // Copyright 2019-2020 koushiro. Licensed under MIT.
 
-use nom::{be_i24, be_u8, Err as NomErr, IResult, Needed};
+use nom::{
+    number::streaming::{be_i24, be_u8},
+    Err as NomErr, IResult, Needed,
+};
 
 /// The tag data part of `video` FLV tag, including `tag data header` and `tag data body`.
 #[derive(Debug, Clone, PartialEq)]
@@ -16,9 +19,9 @@ pub fn video_tag(input: &[u8], size: usize) -> IResult<&[u8], VideoTag> {
     do_parse!(
         input,
         // VideoTagHeader
-        header: apply!(video_tag_header, size)      >>
+        header: call!(video_tag_header, size)      >>
         // VideoTagBody
-        body:   apply!(video_tag_body, size - 1)    >>
+        body:   call!(video_tag_body, size - 1)    >>
         (VideoTag {
             header,
             body,
@@ -80,7 +83,7 @@ pub fn video_tag_header(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHea
     let (remain, (frame_type, codec_id)) = try_parse!(
         input,
         bits!(tuple!(
-            switch!(take_bits!(u8, 4),
+            switch!(take_bits!(4u8),
                 1  => value!(FrameType::Key)                |
                 2  => value!(FrameType::Inter)              |
                 3  => value!(FrameType::DisposableInter)    |
@@ -88,7 +91,7 @@ pub fn video_tag_header(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHea
                 5  => value!(FrameType::Command)            |
                 _  => value!(FrameType::Unknown)
             ),
-            switch!(take_bits!(u8, 4),
+            switch!(take_bits!(4u8),
                 2 => value!(CodecID::SorensonH263)  |
                 3 => value!(CodecID::Screen1)       |
                 4 => value!(CodecID::VP6)           |

@@ -14,3 +14,11 @@ mod parse;
 
 pub use self::error::{Error, Result};
 pub use self::parse::*;
+
+///
+pub fn parse(input: &[u8]) -> Result<FlvFile> {
+    match FlvFile::parse(input) {
+        Ok((_output, flv)) => Ok(flv),
+        Err(_) => Err(Error::Parse)
+    }
+}

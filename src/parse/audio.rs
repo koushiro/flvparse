@@ -3,7 +3,7 @@
 use nom::{number::streaming::be_u8, Err as NomErr, IResult, Needed};
 
 /// The tag data part of `audio` FLV tag, including `tag data header` and `tag data body`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AudioTag<'a> {
     /// The header part of `audio` FLV tag.
     pub header: AudioTagHeader, // 8 bits.
@@ -27,7 +27,7 @@ pub fn audio_tag(input: &[u8], size: usize) -> IResult<&[u8], AudioTag> {
 }
 
 /// The `tag data header` part of `audio` FLV tag data.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct AudioTagHeader {
     /// The format of sound, 4 bits.
     pub sound_format: SoundFormat,
@@ -40,7 +40,7 @@ pub struct AudioTagHeader {
 }
 
 /// The audio format.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum SoundFormat {
     /// 0, PcmPlatformEndian
     PcmPlatformEndian,
@@ -73,7 +73,7 @@ pub enum SoundFormat {
 }
 
 /// The audio sampling rate.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum SoundRate {
     /// 0, 5.5 KHz.
     _5_5KHZ,
@@ -86,7 +86,7 @@ pub enum SoundRate {
 }
 
 /// The size of each audio sample.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum SoundSize {
     /// 0, 8 bit.
     _8Bit,
@@ -95,7 +95,7 @@ pub enum SoundSize {
 }
 
 /// The type of audio, including mono and stereo.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum SoundType {
     /// 0, Mono sound.
     Mono,
@@ -157,7 +157,7 @@ pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHea
 }
 
 /// The `tag data body` part of `audio` FLV tag data.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AudioTagBody<'a> {
     /// The actual `tag data body` of `audio` FLV tag data.
     pub data: &'a [u8],
@@ -178,7 +178,7 @@ pub fn audio_tag_body(input: &[u8], size: usize) -> IResult<&[u8], AudioTagBody>
 }
 
 /// The `tag data body` part of `audio` FLV tag data whose `SoundFormat` is 10 -- AAC.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AACAudioPacket<'a> {
     /// Only useful when sound format is 10 -- AAC, 1 byte.
     pub packet_type: AACPacketType,
@@ -187,7 +187,7 @@ pub struct AACAudioPacket<'a> {
 }
 
 /// The type of AAC packet.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum AACPacketType {
     /// 0, SequenceHeader.
     SequenceHeader,

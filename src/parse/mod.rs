@@ -15,19 +15,11 @@ use nom::{
 pub use self::audio::*;
 pub use self::script::*;
 pub use self::video::*;
-use crate::error::{Error, Result};
 
 const FLV_HEADER_SIGNATURE: [u8; 3] = [0x46, 0x4c, 0x56];
 
-///
-pub fn parse(input: &[u8]) -> Result<FlvFile> {
-    FlvFile::parse(input)
-        .map_err(|_| Error::Parse)
-        .map(|(_, flv)| flv)
-}
-
 /// The FLV file structure, including header and body.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FlvFile<'a> {
     /// The header of FLV file.
     pub header: FlvFileHeader,
@@ -46,7 +38,7 @@ impl<'a> FlvFile<'a> {
 }
 
 /// The header part of FLV file.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct FlvFileHeader {
     /// Signature bytes are always "FLV" (0x46, 0x4c, 0x56).
     pub signature: [u8; 3],
@@ -92,7 +84,7 @@ pub fn flv_file_header(input: &[u8]) -> IResult<&[u8], FlvFileHeader> {
 //}
 
 /// The body part of FLV file.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FlvFileBody<'a> {
     /// The size of the first previous tag is always 0.
     pub first_previous_tag_size: u32,
@@ -119,7 +111,7 @@ pub fn flv_file_body(input: &[u8]) -> IResult<&[u8], FlvFileBody> {
 /// The FLV tag has three types: `script tag`, `audio tag` and `video tag`.
 /// Each tag contains tag header and tag data.
 /// The structure of each type of tag header is the same.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FlvTag<'a> {
     /// The header part of FLV tag.
     pub header: FlvTagHeader,
@@ -143,7 +135,7 @@ pub fn flv_tag(input: &[u8]) -> IResult<&[u8], FlvTag> {
 //}
 
 /// The tag header part of FLV tag.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct FlvTagHeader {
     /// Reserved    2 bits  Reserved for FMS, should be 0.
     /// Filter      1 bit   Indicates if packets are filtered.
@@ -162,7 +154,7 @@ pub struct FlvTagHeader {
 }
 
 /// The type of FLV tag.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum FlvTagType {
     /// Audio tag type.
     Audio = 0x08,
@@ -202,7 +194,7 @@ pub fn flv_tag_header(input: &[u8]) -> IResult<&[u8], FlvTagHeader> {
 //}
 
 /// The tag data part of FLV tag.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum FlvTagData<'a> {
     /// Audio tag data.
     Audio(AudioTag<'a>),

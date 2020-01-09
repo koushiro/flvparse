@@ -4,7 +4,7 @@
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/koushiro/flvparser?branch=master&svg=true)](https://ci.appveyor.com/project/koushiro/flvparser)
 [![GitHub License](https://img.shields.io/github/license/koushiro/flvparser.svg)](https://github.com/koushiro/flvparser/blob/master/LICENSE)
 
-A FLV file parser written in Rust with [nom](https://github.com/Geal/nom).
+A FLV format parsing library written in Rust with [nom](https://github.com/Geal/nom).
 
 ## Usage
 

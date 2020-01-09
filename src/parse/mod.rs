@@ -1,49 +1,50 @@
-/// Parse the structure of the contents of FLV files.
+// Copyright 2019-2020 koushiro. Licensed under MIT.
+
+// Parse the structure of the contents of FLV files.
+// [The FLV File Format Spec](https://www.adobe.com/content/dam/acom/en/devnet/flv/video_file_format_spec_v10_1.pdf)
+
+mod audio;
+mod script;
+mod video;
+
+use nom::{be_u24, be_u32, be_u8, IResult};
+
+pub use self::audio::*;
+pub use self::script::*;
+pub use self::video::*;
+use crate::error::{Error, Result};
+
+const FLV_HEADER_SIGNATURE: [u8; 3] = [0x46, 0x4c, 0x56];
+
 ///
-/// [The FLV File Format Spec](https://www.adobe.com/content/dam/acom/en/devnet/flv/video_file_format_spec_v10_1.pdf)
-use std::str;
-
-use nom::{
-    be_u8, be_u16, be_u24, be_u32, be_i16, be_i24, be_f64,
-    IResult, Err as NomErr, Needed
-};
-
-pub struct FLVParser {}
-
-impl FLVParser {
-    pub fn parse(input: &[u8]) -> Result<FLVFile, String> {
-        match parse_flv_file(input) {
-            Ok((_, flv_file)) => Ok(flv_file),
-            Err(e) => Err(format!("Fail to parse flv file: {:?}", e)),
-        }
-    }
+pub fn parse(input: &[u8]) -> Result<FlvFile> {
+    FlvFile::parse(input)
+        .map_err(|_| Error::Parse)
+        .map(|(_, flv)| flv)
 }
 
 /// The FLV file structure, including header and body.
 #[derive(Debug, Clone, PartialEq)]
-pub struct FLVFile<'a> {
-    pub header: FLVFileHeader,
-    pub body: FLVFileBody<'a>,
+pub struct FlvFile<'a> {
+    /// The header of FLV file.
+    pub header: FlvFileHeader,
+    /// The body of FLV file.
+    pub body: FlvFileBody<'a>,
 }
 
-//pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
-pub fn parse_flv_file(input: &[u8]) -> IResult<&[u8], FLVFile> {
-    do_parse!(
-        input,
-        // FLV file header.
-        header: flv_file_header >>
-        // FLV file body.
-        body:   flv_file_body   >>
-        (FLVFile {
-            header,
-            body,
-        })
-    )
+impl<'a> FlvFile<'a> {
+    ///
+    pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], FlvFile<'a>> {
+        do_parse!(
+            input,
+            header: flv_file_header >> body: flv_file_body >> (FlvFile { header, body })
+        )
+    }
 }
 
 /// The header part of FLV file.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct FLVFileHeader {
+pub struct FlvFileHeader {
     /// Signature bytes are always "FLV" (0x46, 0x4c, 0x56).
     pub signature: [u8; 3],
     /// File version (0x01 for FLV version 1).
@@ -53,90 +54,94 @@ pub struct FLVFileHeader {
     /// TypeFlagsReserved   1 bit   Shall be 0.
     /// TypeFlagsVideo      1 bit   1 = Video tags are present.
     pub flags: u8,
+    /// The flag that represents whether the audio exists in FLV file.
     pub has_audio: bool,
+    /// The flag that represents whether the video exists in FLV file.
     pub has_video: bool,
     /// The length of this header in bytes, usually has a value of 9 for FLV version 1.
     pub data_offset: u32,
 }
 
-static FLV_HEADER_SIGNATURE: &'static [u8] = &[0x46, 0x4c, 0x56];
-pub fn flv_file_header(input: &[u8]) -> IResult<&[u8], FLVFileHeader> {
+//impl FlvFileHeader {
+///
+pub fn flv_file_header(input: &[u8]) -> IResult<&[u8], FlvFileHeader> {
     do_parse!(
         input,
         // FLV Signature
         tag!(FLV_HEADER_SIGNATURE)  >>
-        // FLV File Version
-        version:     be_u8          >>
-        // Flags
-        flags:       be_u8          >>
-        // The length of this header in bytes
-        data_offset: be_u32         >>
-        (FLVFileHeader {
-            signature: [0x46, 0x4c, 0x56],
-            version,
-            flags,
-            has_audio: flags & 4 == 4,
-            has_video: flags & 1 == 1,
-            data_offset,
-        })
+            // FLV File Version
+            version:     be_u8          >>
+            // Flags
+            flags:       be_u8          >>
+            // The length of this header in bytes
+            data_offset: be_u32         >>
+
+            (FlvFileHeader {
+                signature: FLV_HEADER_SIGNATURE,
+                version,
+                flags,
+                has_audio: flags & 4 == 4,
+                has_video: flags & 1 == 1,
+                data_offset,
+            })
     )
 }
+//}
 
 /// The body part of FLV file.
 #[derive(Debug, Clone, PartialEq)]
-pub struct FLVFileBody<'a> {
+pub struct FlvFileBody<'a> {
     /// The size of the first previous tag is always 0.
     pub first_previous_tag_size: u32,
     /// FLV Tag and the size of the tag.
-    pub tags: Vec<(FLVTag<'a>, u32)>,
+    pub tags: Vec<(FlvTag<'a>, u32)>,
 }
 
+//impl<'a> FlvFileBody<'a> {
 // https://github.com/Geal/nom/issues/790 - many0 returns Incomplete in weird cases.
-pub fn flv_file_body(input: &[u8]) -> IResult<&[u8], FLVFileBody> {
+///
+pub fn flv_file_body(input: &[u8]) -> IResult<&[u8], FlvFileBody> {
     do_parse!(
         input,
         // The first previous tag size.
         first_previous_tag_size: be_u32                    >>
-        // FLV Tag and the size of the tag.
-        tags: many0!(complete!(tuple!(flv_tag, be_u32)))   >>
-        (FLVFileBody {
-            first_previous_tag_size,
-            tags,
-        })
+            // FLV Tag and the size of the tag.
+            tags: many0!(complete!(tuple!(flv_tag, be_u32)))   >>
+
+            (FlvFileBody { first_previous_tag_size, tags })
     )
 }
+//}
 
 /// The FLV tag has three types: `script tag`, `audio tag` and `video tag`.
 /// Each tag contains tag header and tag data.
 /// The structure of each type of tag header is the same.
 #[derive(Debug, Clone, PartialEq)]
-pub struct FLVTag<'a> {
-    pub header: FLVTagHeader,
-    /// Data specific for each media type.
-    /// 8 = audio data.
-    /// 9 = video data.
-    /// 18 = script data.
-    pub data: FLVTagData<'a>,
+pub struct FlvTag<'a> {
+    /// The header part of FLV tag.
+    pub header: FlvTagHeader,
+    /// Data specific for each media type:
+    /// * 8 = audio data.
+    /// * 9 = video data.
+    /// * 18 = script data.
+    pub data: FlvTagData<'a>,
 }
 
-pub fn flv_tag(input: &[u8]) -> IResult<&[u8], FLVTag> {
+//impl<'a> FlvTag<'a> {
+///
+pub fn flv_tag(input: &[u8]) -> IResult<&[u8], FlvTag> {
     do_parse!(
         input,
-        // FLVTagHeader
-        header: flv_tag_header                                  >>
-        // FLVTagData
-        data:   apply!(flv_tag_data,
-                    header.tag_type, header.data_size as usize) >>
-        (FLVTag {
-            header,
-            data,
-        })
+        header: flv_tag_header
+            >> data: apply!(flv_tag_data, header.tag_type, header.data_size as usize)
+            >> (FlvTag { header, data })
     )
 }
+//}
 
 /// The tag header part of FLV tag.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct FLVTagHeader {
+pub struct FlvTagHeader {
     /// Reserved    2 bits  Reserved for FMS, should be 0.
     /// Filter      1 bit   Indicates if packets are filtered.
     ///                     0 = No pre-processing required
@@ -144,11 +149,10 @@ pub struct FLVTagHeader {
     ///                         is required before it can be rendered.
     /// TagType     5 bits  The type of contents in this tag,
     ///                     8 = audio, 9 = video, 18 = script.
-    pub tag_type: FLVTagType,
+    pub tag_type: FlvTagType,
     /// The size of the tag's data part, 3 bytes.
     pub data_size: u32,
-    /// The timestamp (in milliseconds) of the tag,
-    /// Timestamp (3 bytes) + TimestampExtended (1 byte).
+    /// The timestamp (in milliseconds) of the tag, Timestamp (3 bytes) + TimestampExtended (1 byte).
     pub timestamp: u32,
     /// The id of stream is always 0, 3 bytes.
     pub stream_id: u32,
@@ -156,594 +160,65 @@ pub struct FLVTagHeader {
 
 /// The type of FLV tag.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum FLVTagType {
+pub enum FlvTagType {
+    /// Audio tag type.
     Audio = 0x08,
+    /// Video tag type.
     Video = 0x09,
+    /// Script tag type.
     Script = 0x18,
 }
 
-pub fn flv_tag_header(input: &[u8]) -> IResult<&[u8], FLVTagHeader> {
+//impl FlvTagHeader {
+///
+pub fn flv_tag_header(input: &[u8]) -> IResult<&[u8], FlvTagHeader> {
     do_parse!(
         input,
         // Tag Type
         tag_type: switch!(be_u8,
-            8  => value!(FLVTagType::Audio) |
-            9  => value!(FLVTagType::Video) |
-            18 => value!(FLVTagType::Script)
-        )                           >>
-        // The size of the tag's data part
-        data_size:          be_u24  >>
-        // The timestamp (in milliseconds) of the tag
-        timestamp:          be_u24  >>
-        // Extension of the timestamp field to form a SI32 value
-        timestamp_extended: be_u8   >>
-        // The id of stream
-        stream_id:          be_u24  >>
-        (FLVTagHeader {
-            tag_type,
-            data_size,
-            timestamp: (u32::from(timestamp_extended) << 24) + timestamp,
-            stream_id,
-        })
+                8  => value!(FlvTagType::Audio) |
+                9  => value!(FlvTagType::Video) |
+                18 => value!(FlvTagType::Script)
+            )                           >>
+            // The size of the tag's data part
+            data_size:          be_u24  >>
+            // The timestamp (in milliseconds) of the tag
+            timestamp:          be_u24  >>
+            // Extension of the timestamp field to form a SI32 value
+            timestamp_extended: be_u8   >>
+            // The id of stream
+            stream_id:          be_u24  >>
+            (FlvTagHeader {
+                tag_type,
+                data_size,
+                timestamp: (u32::from(timestamp_extended) << 24) + timestamp,
+                stream_id,
+            })
     )
 }
+//}
 
 /// The tag data part of FLV tag.
 #[derive(Debug, Clone, PartialEq)]
-pub enum FLVTagData<'a> {
+pub enum FlvTagData<'a> {
+    /// Audio tag data.
     Audio(AudioTag<'a>),
+    /// Video tag data.
     Video(VideoTag<'a>),
+    /// Script tag data.
     Script(ScriptTag<'a>),
 }
 
-pub fn flv_tag_data(input: &[u8], tag_type: FLVTagType, size: usize) -> IResult<&[u8], FLVTagData> {
+//impl<'a> FlvTagData<'a> {
+///
+pub fn flv_tag_data(input: &[u8], tag_type: FlvTagType, size: usize) -> IResult<&[u8], FlvTagData> {
     match tag_type {
-        FLVTagType::Audio => map!(input, apply!(audio_tag, size), FLVTagData::Audio),
-        FLVTagType::Video => map!(input, apply!(video_tag, size), FLVTagData::Video),
-        FLVTagType::Script => map!(input, apply!(script_tag, size), FLVTagData::Script),
+        FlvTagType::Audio => map!(input, apply!(audio_tag, size), FlvTagData::Audio),
+        FlvTagType::Video => map!(input, apply!(video_tag, size), FlvTagData::Video),
+        FlvTagType::Script => map!(input, apply!(script_tag, size), FlvTagData::Script),
     }
 }
-
-// ----------------------------------------------------------------------------
-/// The tag data part of `audio` FLV tag, including `tag data header` and `tag data body`.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AudioTag<'a> {
-    pub header: AudioTagHeader, // 8 bits.
-    pub body: AudioTagBody<'a>,
-}
-
-pub fn audio_tag(input: &[u8], size: usize) -> IResult<&[u8], AudioTag> {
-    do_parse!(
-        input,
-        // AudioTagHeader
-        header: apply!(audio_tag_header, size)      >>
-        // AudioTagBody
-        body:   apply!(audio_tag_body, size - 1)    >>
-        (AudioTag {
-            header,
-            body,
-        })
-    )
-}
-
-/// The `tag data header` part of `audio` FLV tag data.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct AudioTagHeader {
-    pub sound_format: SoundFormat, // 4 bits.
-    pub sound_rate: SoundRate,     // 2 bits.
-    pub sound_size: SoundSize,     // 1 bit.
-    pub sound_type: SoundType,     // 1 bit.
-}
-
-/// The audio format.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SoundFormat {
-    PcmPlatformEndian,   // 0
-    ADPCM,               // 1
-    MP3,                 // 2
-    PcmLittleEndian,     // 3
-    Nellymoser16kHzMono, // 4
-    Nellymoser8kHzMono,  // 5
-    Nellymoser,          // 6
-    PcmALaw,             // 7
-    PcmMuLaw,            // 8
-    Reserved,            // 9
-    AAC,                 // 10, MPEG-4 Part3 AAC
-    Speex,               // 11
-    MP3_8kHz,            // 14
-    DeviceSpecific,      // 15
-}
-
-/// The audio sampling rate.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SoundRate {
-    _5_5KHZ, // 0
-    _11KHZ,  // 1
-    _22KHZ,  // 2
-    _44KHZ,  // 3
-}
-
-/// The size of each audio sample.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SoundSize {
-    _8Bit,  // 0
-    _16Bit, // 1
-}
-
-/// The type of audio, including mono and stereo.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum SoundType {
-    Mono,   // 0
-    Stereo, // 1
-}
-
-pub fn audio_tag_header(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHeader> {
-    if size < 1 {
-        return Err(NomErr::Incomplete(Needed::Size(1)));
-    }
-
-    let (remain, (sound_format, sound_rate, sound_size, sound_type)) = try_parse!(
-        input,
-        bits!(tuple!(
-            switch!(take_bits!(u8, 4),
-                0  => value!(SoundFormat::PcmPlatformEndian)    |
-                1  => value!(SoundFormat::ADPCM)                |
-                2  => value!(SoundFormat::MP3)                  |
-                3  => value!(SoundFormat::PcmLittleEndian)      |
-                4  => value!(SoundFormat::Nellymoser16kHzMono)  |
-                5  => value!(SoundFormat::Nellymoser8kHzMono)   |
-                6  => value!(SoundFormat::Nellymoser)           |
-                7  => value!(SoundFormat::PcmALaw)              |
-                8  => value!(SoundFormat::PcmMuLaw)             |
-                9  => value!(SoundFormat::Reserved)             |
-                10 => value!(SoundFormat::AAC)                  |
-                11 => value!(SoundFormat::Speex)                |
-                14 => value!(SoundFormat::MP3_8kHz)             |
-                15 => value!(SoundFormat::DeviceSpecific)
-            ),
-            switch!(take_bits!(u8, 2),
-                0 => value!(SoundRate::_5_5KHZ) |
-                1 => value!(SoundRate::_11KHZ)  |
-                2 => value!(SoundRate::_22KHZ)  |
-                3 => value!(SoundRate::_44KHZ)
-            ),
-            switch!(take_bits!(u8, 1),
-                0 => value!(SoundSize::_8Bit)   |
-                1 => value!(SoundSize::_16Bit)
-            ),
-            switch!(take_bits!(u8, 1),
-                0 => value!(SoundType::Mono)    |
-                1 => value!(SoundType::Stereo)
-            )
-        ))
-    );
-
-    Ok((
-        remain,
-        AudioTagHeader {
-            sound_format,
-            sound_rate,
-            sound_size,
-            sound_type,
-        },
-    ))
-}
-
-/// The `tag data body` part of `audio` FLV tag data.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AudioTagBody<'a> {
-    pub data: &'a [u8],
-}
-
-pub fn audio_tag_body(input: &[u8], size: usize) -> IResult<&[u8], AudioTagBody> {
-    if input.len() < size {
-        return Err(NomErr::Incomplete(Needed::Size(size)));
-    }
-
-    Ok((
-        &input[size..],
-        AudioTagBody {
-            data: &input[0..size],
-        },
-    ))
-}
-
-/// The `tag data body` part of `audio` FLV tag data whose `SoundFormat` is 10 -- AAC.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AACAudioPacket<'a> {
-    /// Only useful when sound format is 10 -- AAC.
-    pub packet_type: AACPacketType, // 1 byte.
-    pub aac_data: &'a [u8],
-}
-
-/// The type of AAC packet.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum AACPacketType {
-    SequenceHeader, // 0
-    Raw,            // 1
-}
-
-pub fn aac_audio_packet(input: &[u8], size: usize) -> IResult<&[u8], AACAudioPacket> {
-    if input.len() < size {
-        return Err(NomErr::Incomplete(Needed::Size(size)));
-    }
-
-    if size < 1 {
-        return Err(NomErr::Incomplete(Needed::Size(1)));
-    }
-
-    let (_, packet_type) = try_parse!(
-        input,
-        switch!(be_u8,
-            0 => value!(AACPacketType::SequenceHeader)  |
-            1 => value!(AACPacketType::Raw)
-        )
-    );
-
-    Ok((
-        &input[size..],
-        AACAudioPacket {
-            packet_type,
-            aac_data: &input[1..size],
-        },
-    ))
-}
-
-// ----------------------------------------------------------------------------
-/// The tag data part of `video` FLV tag, including `tag data header` and `tag data body`.
-#[derive(Debug, Clone, PartialEq)]
-pub struct VideoTag<'a> {
-    pub header: VideoTagHeader, // 8 bits.
-    pub body: VideoTagBody<'a>,
-}
-
-pub fn video_tag(input: &[u8], size: usize) -> IResult<&[u8], VideoTag> {
-    do_parse!(
-        input,
-        // VideoTagHeader
-        header: apply!(video_tag_header, size)      >>
-        // VideoTagBody
-        body:   apply!(video_tag_body, size - 1)    >>
-        (VideoTag {
-            header,
-            body,
-        })
-    )
-}
-
-/// The `tag data header` part of `video` FLV tag data.
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct VideoTagHeader {
-    pub frame_type: FrameType, // 4 bits.
-    pub codec_id: CodecID,     // 4 bits.
-}
-
-/// The type of video frame.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum FrameType {
-    Key,             // 1
-    Inter,           // 2
-    DisposableInter, // 3
-    Generated,       // 4
-    Command,         // 5
-    Unknown,         // Others
-}
-
-/// The code identifier of video.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum CodecID {
-    SorensonH263, // 2
-    Screen1,      // 3
-    VP6,          // 4
-    VP6Alpha,     // 5
-    Screen2,      // 6
-    AVC,          // 7, MPEG-4 Part 10 AVC / H.264
-    Unknown,      // Others
-}
-
-pub fn video_tag_header(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHeader> {
-    if size < 1 {
-        return Err(NomErr::Incomplete(Needed::Size(1)));
-    }
-
-    let (remain, (frame_type, codec_id)) = try_parse!(
-        input,
-        bits!(tuple!(
-            switch!(take_bits!(u8, 4),
-                1  => value!(FrameType::Key)                |
-                2  => value!(FrameType::Inter)              |
-                3  => value!(FrameType::DisposableInter)    |
-                4  => value!(FrameType::Generated)          |
-                5  => value!(FrameType::Command)            |
-                _  => value!(FrameType::Unknown)
-            ),
-            switch!(take_bits!(u8, 4),
-                2 => value!(CodecID::SorensonH263)  |
-                3 => value!(CodecID::Screen1)       |
-                4 => value!(CodecID::VP6)           |
-                5 => value!(CodecID::VP6Alpha)      |
-                6 => value!(CodecID::Screen2)       |
-                7 => value!(CodecID::AVC)           |
-                _ => value!(CodecID::Unknown)
-            )
-        ))
-    );
-
-    Ok((
-        remain,
-        VideoTagHeader {
-            frame_type,
-            codec_id,
-        },
-    ))
-}
-
-/// The `tag data body` part of `video` FLV tag data.
-#[derive(Debug, Clone, PartialEq)]
-pub struct VideoTagBody<'a> {
-    pub data: &'a [u8],
-}
-
-pub fn video_tag_body(input: &[u8], size: usize) -> IResult<&[u8], VideoTagBody> {
-    if input.len() < size {
-        return Err(NomErr::Incomplete(Needed::Size(size)));
-    }
-
-    Ok((
-        &input[size..],
-        VideoTagBody {
-            data: &input[0..size],
-        },
-    ))
-}
-
-/// The `tag data body` part of `video` FLV tag data whose `CodecID` is 7 -- AVC.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AVCVideoPacket<'a> {
-    /// Only useful when CodecID is 7 -- AVC.
-    pub packet_type: AVCPacketType, // 1 byte.
-    /// IF packet_type == 1 (NALU)
-    ///     composition_time = Composition time offset (in milliseconds)
-    /// ELSE
-    ///     composition_time = 0
-    pub composition_time: i32, // 3 bytes.
-    pub avc_data: &'a [u8],
-}
-
-/// The type of AVC packet.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum AVCPacketType {
-    SequenceHeader, // 0
-    NALU,           // 1
-    EndOfSequence,  // 2
-    Unknown,        // Others
-}
-
-pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AVCVideoPacket> {
-    if input.len() < size {
-        return Err(NomErr::Incomplete(Needed::Size(size)));
-    }
-
-    if size < 4 {
-        return Err(NomErr::Incomplete(Needed::Size(4)));
-    }
-
-    let (_, (packet_type, composition_time)) = try_parse!(
-        input,
-        tuple!(
-            switch!(be_u8,
-                0 => value!(AVCPacketType::SequenceHeader)  |
-                1 => value!(AVCPacketType::NALU)            |
-                2 => value!(AVCPacketType::EndOfSequence)   |
-                _ => value!(AVCPacketType::Unknown)
-            ),
-            be_i24
-        )
-    );
-
-    Ok((
-        &input[size..],
-        AVCVideoPacket {
-            packet_type,
-            composition_time,
-            avc_data: &input[4..size],
-        },
-    ))
-}
-
-// ----------------------------------------------------------------------------
-/// The tag data part of `script` FLV tag, including `name` and `value`.
-/// The `name` is a `ScriptDataValue` enum whose type is `String`.
-/// The `value` is a `ScriptDataValue` enum whose type is `ECMAArray`.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ScriptTag<'a> {
-    /// Method or object name.
-    /// ScriptTagValue.Type = 2 (String)
-    pub name: &'a str,
-    /// AMF arguments or object properties.
-    /// ScriptTagValue.Type = 8 (ECMAArray)
-    pub value: ScriptDataValue<'a>,
-}
-
-static SCRIPT_DATA_VALUE_STRING_TYPE: &'static [u8] = &[0x02];
-pub fn script_tag(input: &[u8], _size: usize) -> IResult<&[u8], ScriptTag> {
-    do_parse!(
-        input,
-        // ScriptTagValue.Type = 2 (String)
-        tag!(SCRIPT_DATA_VALUE_STRING_TYPE) >>
-        // Method or object name.
-        name:  script_data_string           >>
-        // AMF arguments or object properties.
-        // ScriptTagValue.Type = 8 (ECMA array)
-        value: script_data_value            >>
-        (ScriptTag {
-            name,
-            value,
-        })
-    )
-}
-
-/// The `ScriptDataValue` enum.
-#[derive(Debug, Clone, PartialEq)]
-pub enum ScriptDataValue<'a> {
-    Number(f64),                                  // 0
-    Boolean(bool),                                // 1
-    String(&'a str),                              // 2
-    Object(Vec<ScriptDataObjectProperty<'a>>),    // 3
-    MovieClip,                                    // 4
-    Null,                                         // 5
-    Undefined,                                    // 6
-    Reference(u16),                               // 7
-    ECMAArray(Vec<ScriptDataObjectProperty<'a>>), // 8
-    StrictArray(Vec<ScriptDataValue<'a>>),        // 10
-    Date(ScriptDataDate),                         // 11
-    LongString(&'a str),                          // 12
-}
-
-pub fn script_data_value(input: &[u8]) -> IResult<&[u8], ScriptDataValue> {
-    //    println!("script_data_value input = {:?}", input);
-    switch!(input,
-        // Type
-        be_u8,
-        // Script Data Value
-        0  => map!(script_data_number, ScriptDataValue::Number)                     |
-        1  => map!(script_data_boolean, |v| ScriptDataValue::Boolean(v != 0))       |
-        2  => map!(script_data_string, ScriptDataValue::String)                     |
-        3  => map!(script_data_object, ScriptDataValue::Object)                     |
-        4  => value!(ScriptDataValue::MovieClip)                                    |
-        5  => value!(ScriptDataValue::Null)                                         |
-        6  => value!(ScriptDataValue::Undefined)                                    |
-        7  => map!(script_data_reference, ScriptDataValue::Reference)               |
-        8  => map!(script_data_ecma_array, ScriptDataValue::ECMAArray)              |
-        10 => map!(script_data_strict_array, ScriptDataValue::StrictArray)          |
-        11 => map!(script_data_date, ScriptDataValue::Date)                         |
-        12 => map!(script_data_long_string, ScriptDataValue::LongString)
-    )
-}
-
-pub fn script_data_number(input: &[u8]) -> IResult<&[u8], f64> {
-    //    println!("script_data_number input = {:?}", input);
-    be_f64(input)
-}
-
-pub fn script_data_boolean(input: &[u8]) -> IResult<&[u8], u8> {
-    //    println!("script_data_boolean input = {:?}", input);
-    be_u8(input)
-}
-
-pub fn script_data_reference(input: &[u8]) -> IResult<&[u8], u16> {
-    //    println!("script_data_reference input = {:?}", input);
-    be_u16(input)
-}
-
-pub fn script_data_string(input: &[u8]) -> IResult<&[u8], &str> {
-    //    println!("script_data_string input = {:?}", input);
-    map_res!(input, length_bytes!(be_u16), str::from_utf8)
-}
-
-/// The `ScriptDataObjectProperty` is the component of `Object` and `ECMAArray`,
-/// which are a kind of `ScriptDataValue`.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ScriptDataObjectProperty<'a> {
-    pub property_name: &'a str,
-    pub property_data: ScriptDataValue<'a>,
-}
-
-pub fn script_data_object_property(input: &[u8]) -> IResult<&[u8], ScriptDataObjectProperty> {
-    //    println!("script_data_object_property input = {:?}", input);
-    do_parse!(
-        input,
-        // Object property name
-        name: script_data_string    >>
-        // Object property data
-        value: script_data_value    >>
-        (ScriptDataObjectProperty {
-            property_name: name,
-            property_data: value,
-        })
-    )
-}
-
-pub fn script_data_object(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataObjectProperty>> {
-    //    println!("==============================================================");
-    //    println!("script_data_object input = {:?}", input);
-    // Script Data Object Property[] and Script Data Object End
-    terminated!(
-        input,
-        many0!(script_data_object_property),
-        script_data_object_end_marker
-    )
-}
-
-static OBJECT_END_MARKER: &'static [u8] = &[0x00, 0x00, 0x09];
-pub fn script_data_object_end_marker(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    //    println!("script_data_object_end_marker input = {:?}", input);
-    tag!(input, OBJECT_END_MARKER)
-}
-
-pub fn script_data_ecma_array(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataObjectProperty>> {
-    //    println!("==============================================================");
-    //    println!("script_data_ecma_array input = {:?}", input);
-    // The list contains approximately ECMA Array Length number of items.
-    do_parse!(
-        input,
-        // ECMA Array Length
-        _length: be_u32 >>
-        // Script Data Object Property[] and Script Data Object End
-        value: terminated!(
-            many0!(script_data_object_property),
-            script_data_object_end_marker
-        )               >>
-        (value)
-    )
-}
-
-pub fn script_data_strict_array(input: &[u8]) -> IResult<&[u8], Vec<ScriptDataValue>> {
-    //    println!("==============================================================");
-    //    println!("script_data_strict_array input = {:?}", input);
-    // The list shall contain Strict Array Length number of values.
-    // No terminating record follows the list.
-    do_parse!(
-        input,
-        // Strict Array Length
-        length: be_u32                                      >>
-        // Script Data Value[]
-        value: count!(script_data_value, length as usize)   >>
-        (value)
-    )
-}
-
-/// The `ScriptDataDate` is a kind of `ScriptDataValue`.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct ScriptDataDate {
-    /// Number of milliseconds since UNIX_EPOCH.
-    // SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_millis()
-    pub date_time: f64,
-    /// Local time offset in minutes from UTC.
-    /// For time zones located west of Greenwich, this value is a negative number.
-    /// Time zones east of Greenwich are positive.
-    pub local_date_time_offset: i16,
-}
-
-pub fn script_data_date(input: &[u8]) -> IResult<&[u8], ScriptDataDate> {
-    //    println!("script_data_date input = {:?}", input);
-    do_parse!(
-        input,
-        // Number of milliseconds since UNIX_EPOCH.
-        date_time:              be_f64  >>
-        // Local time offset in minutes from UTC.
-        local_date_time_offset: be_i16  >>
-        (ScriptDataDate {
-            date_time,
-            local_date_time_offset,
-        })
-    )
-}
-
-pub fn script_data_long_string(input: &[u8]) -> IResult<&[u8], &str> {
-    //    println!("script_data_long_string input = {:?}", input);
-    map_res!(input, length_bytes!(be_u32), str::from_utf8)
-}
+//}
 
 #[cfg(test)]
 mod tests {
@@ -753,7 +228,7 @@ mod tests {
     // 1. script tag
     // 2. video tag
     // 3. audio tag
-    const TEST_FLV_FILE: &'static [u8] = include_bytes!("../assets/test.flv");
+    const TEST_FLV_FILE: &[u8] = include_bytes!("../assets/test.flv");
     const FLV_FILE_HEADER_LENGTH: usize = 9;
     const PREVIOUS_TAG_SIZE_LENGTH: usize = 4;
     const FLV_TAG_HEADER_LENGTH: usize = 11;
@@ -762,10 +237,10 @@ mod tests {
 
     #[test]
     fn test_parse_flv_file() {
-        let flv_file = parse_flv_file(&TEST_FLV_FILE[..]).unwrap().1;
+        let flv_file = FlvFile::parse(&TEST_FLV_FILE[..]).unwrap().1;
         assert_eq!(
             flv_file.header,
-            FLVFileHeader {
+            FlvFileHeader {
                 signature: [0x46, 0x4c, 0x56],
                 version: 1,
                 flags: 0b0000_0101,
@@ -785,13 +260,13 @@ mod tests {
         let end = FLV_FILE_HEADER_LENGTH;
         println!(
             "flv file header = {:?}",
-            flv_file_header(&TEST_FLV_FILE[..end]).unwrap().1
+            FlvFileHeader::parse(&TEST_FLV_FILE[..end]).unwrap().1
         );
         assert_eq!(
-            flv_file_header(&TEST_FLV_FILE[..FLV_FILE_HEADER_LENGTH]),
+            FlvFileHeader::parse(&TEST_FLV_FILE[..FLV_FILE_HEADER_LENGTH]),
             Ok((
                 &b""[..],
-                FLVFileHeader {
+                FlvFileHeader {
                     signature: [0x46, 0x4c, 0x56],
                     version: 1,
                     flags: 0b0000_0101,
@@ -806,7 +281,7 @@ mod tests {
     #[test]
     fn test_flv_file_body() {
         let start = FLV_FILE_HEADER_LENGTH;
-        let body = flv_file_body(&TEST_FLV_FILE[start..]).unwrap().1;
+        let body = FlvFileBody::parse(&TEST_FLV_FILE[start..]).unwrap().1;
         assert_eq!(body.first_previous_tag_size, 0);
         assert_eq!(body.tags[0].1, 11 + 1030);
         assert_eq!(body.tags[1].1, 11 + 48);
@@ -827,20 +302,20 @@ mod tests {
         let end: usize = start + FLV_TAG_HEADER_LENGTH + 7;
         println!(
             "flv tag = {:?}",
-            flv_tag(&TEST_FLV_FILE[start..end]).unwrap().1
+            FlvTag::parse(&TEST_FLV_FILE[start..end]).unwrap().1
         );
         assert_eq!(
-            flv_tag(&TEST_FLV_FILE[start..end]),
+            FlvTag::parse(&TEST_FLV_FILE[start..end]),
             Ok((
                 &b""[..],
-                FLVTag {
-                    header: FLVTagHeader {
-                        tag_type: FLVTagType::Audio, // 0x08
+                FlvTag {
+                    header: FlvTagHeader {
+                        tag_type: FlvTagType::Audio, // 0x08
                         data_size: 7,                // 0x000007
                         timestamp: 0,                // 0x00000000
                         stream_id: 0,                // 0x000000
                     },
-                    data: FLVTagData::Audio(AudioTag {
+                    data: FlvTagData::Audio(AudioTag {
                         // 0xaf = 0b1010 1111, 1 byte
                         header: AudioTagHeader {
                             sound_format: SoundFormat::AAC, // 0b1010 = 10
@@ -874,8 +349,8 @@ mod tests {
             flv_tag_header(&TEST_FLV_FILE[start..end]),
             Ok((
                 &b""[..],
-                FLVTagHeader {
-                    tag_type: FLVTagType::Script, // 0x12
+                FlvTagHeader {
+                    tag_type: FlvTagType::Script, // 0x12
                     data_size: 1030,              // 0x000406
                     timestamp: 0,                 // 0x00000000
                     stream_id: 0,                 // 0x000000
@@ -894,8 +369,8 @@ mod tests {
             flv_tag_header(&TEST_FLV_FILE[start..end]),
             Ok((
                 &b""[..],
-                FLVTagHeader {
-                    tag_type: FLVTagType::Video, // 0x09
+                FlvTagHeader {
+                    tag_type: FlvTagType::Video, // 0x09
                     data_size: 48,               // 0x000030
                     timestamp: 0,                // 0x00000000
                     stream_id: 0,                // 0x000000
@@ -914,8 +389,8 @@ mod tests {
             flv_tag_header(&TEST_FLV_FILE[start..end]),
             Ok((
                 &b""[..],
-                FLVTagHeader {
-                    tag_type: FLVTagType::Audio, // 0x08
+                FlvTagHeader {
+                    tag_type: FlvTagType::Audio, // 0x08
                     data_size: 7,                // 0x000007
                     timestamp: 0,                // 0x00000000
                     stream_id: 0,                // 0x000000
@@ -939,15 +414,15 @@ mod tests {
         let end = start + 7;
         println!(
             "flv tag data = {:?}",
-            flv_tag_data(&TEST_FLV_FILE[start..end], FLVTagType::Audio, 7)
+            FlvTagData::parse(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7)
                 .unwrap()
                 .1
         );
         assert_eq!(
-            flv_tag_data(&TEST_FLV_FILE[start..end], FLVTagType::Audio, 7),
+            FlvTagData::parse(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7),
             Ok((
                 &b""[..],
-                FLVTagData::Audio(AudioTag {
+                FlvTagData::Audio(AudioTag {
                     // 0xaf = 0b1010 1111, 1 byte
                     header: AudioTagHeader {
                         sound_format: SoundFormat::AAC, // 0b1010 = 10

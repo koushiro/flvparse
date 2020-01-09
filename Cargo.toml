@@ -2,22 +2,19 @@
 name = "flvparser"
 version = "0.1.0"
 authors = ["koushiro <koushiro.cqx@gmail.com>"]
+edition = "2018"
 repository = "https://github.com/koushiro/flvparser"
-description = "A FLV file parsing library written in Rust with nom framework"
+description = "A FLV file parsing library written in Rust"
 readme = "README.md"
 license = "MIT"
 keywords = ["flv", "parser"]
-
-[badges]
-travis-ci = { repository = "koushiro/flvparser", branch = "master" }
-appveyor = { repository = "koushiro/flvparser", branch = "master", service = "github" }
-maintenance = { status = "actively-developed" }
+exclude = ["asserts/*"]
 
 [dependencies]
-nom = "4.2"
-clap = "2"
+nom = "4"
+structopt = "0.3"
 prettytable-rs = "^0.8"
 
 [[bin]]
-name = "main"
+name = "flvparser"
 path = "src/main.rs"

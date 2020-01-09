@@ -1,5 +1,7 @@
 // Copyright 2019-2020 koushiro. Licensed under MIT.
 
+#![allow(clippy::unreadable_literal)]
+
 use flvparser::*;
 
 // Just use 3 tags of TEST_FLV_FILE:
@@ -350,10 +352,10 @@ fn test_video_tag() {
                 //   0005 68eb ecf2 3c, 47 bytes
                 body: VideoTagBody {
                     data: &b"\x00\x00\x00\x00\x01\x64\x00\x28\xff\xe1\
-                                 \x00\x1b\x67\x64\x00\x28\xac\xd9\x40\x78\
-                                 \x02\x27\xe5\xc0\x44\x00\x00\x03\x00\x04\
-                                 \x00\x00\x03\x00\xc0\x3c\x60\xc6\x58\x01\
-                                 \x00\x05\x68\xeb\xec\xf2\x3c"[..],
+                        \x00\x1b\x67\x64\x00\x28\xac\xd9\x40\x78\
+                        \x02\x27\xe5\xc0\x44\x00\x00\x03\x00\x04\
+                        \x00\x00\x03\x00\xc0\x3c\x60\xc6\x58\x01\
+                        \x00\x05\x68\xeb\xec\xf2\x3c"[..],
                 },
             }
         ))
@@ -546,8 +548,7 @@ fn test_script_tag() {
 
 #[test]
 fn test_script_data_date() {
-    let input = &b"\x00\x00\x00\x00\x00\x00\x00\x00\
-                             \x00\x08Remain"[..];
+    let input = &b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08Remain"[..];
     println!(
         "script data date = {:?}",
         ScriptDataValue::parse_date(input).unwrap().1
@@ -566,8 +567,7 @@ fn test_script_data_date() {
 
 #[test]
 fn test_script_data_long_string() {
-    let input = &b"\x00\x00\x00\x0b\
-                             Long StringRemain"[..];
+    let input = &b"\x00\x00\x00\x0bLong StringRemain"[..];
     println!(
         "script data long string = {:?}",
         ScriptDataValue::parse_long_string(input).unwrap().1

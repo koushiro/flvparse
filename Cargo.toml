@@ -3,18 +3,21 @@ name = "flvparser"
 version = "0.1.0"
 authors = ["koushiro <koushiro.cqx@gmail.com>"]
 edition = "2018"
+
 repository = "https://github.com/koushiro/flvparser"
 description = "A FLV file parsing library written in Rust"
 readme = "README.md"
 license = "MIT"
-keywords = ["flv", "parser"]
-exclude = ["asserts/*"]
+keywords = ["flv", "parser", "nom"]
+include = ["src/*", "Cargo.toml", "LICENSE", "README.md"]
 
 [dependencies]
 nom = "5"
+
+[dev-dependencies]
 structopt = "0.3"
 prettytable-rs = "^0.8"
 
-[[bin]]
+[[example]]
 name = "flvparser"
-path = "src/main.rs"
+path = "examples/flvparser.rs"

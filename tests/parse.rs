@@ -425,13 +425,13 @@ fn test_video_tag_body() {
 }
 
 macro_rules! obj_prop {
-        ($name:expr, $data:expr) => {
-            ScriptDataObjectProperty {
-                property_name: $name,
-                property_data: $data,
-            }
-        };
-    }
+    ($name:expr, $data:expr) => {
+        ScriptDataObjectProperty {
+            property_name: $name,
+            property_data: $data,
+        }
+    };
+}
 
 #[test]
 fn test_script_tag() {
@@ -450,11 +450,11 @@ fn test_script_tag() {
                 name: "onMetaData",
                 value: ScriptDataValue::ECMAArray(vec![
                     obj_prop!(
-                            "description",
-                            ScriptDataValue::String(
-                                "Codec by Bilibili XCode Worker v4.4.17(fixed_gap:False)"
-                            )
-                        ),
+                        "description",
+                        ScriptDataValue::String(
+                            "Codec by Bilibili XCode Worker v4.4.17(fixed_gap:False)"
+                        )
+                    ),
                     obj_prop!("metadatacreator", ScriptDataValue::String("Version 1.9")),
                     obj_prop!("hasKeyframes", ScriptDataValue::Boolean(true)),
                     obj_prop!("hasVideo", ScriptDataValue::Boolean(true)),
@@ -480,64 +480,64 @@ fn test_script_tag() {
                     obj_prop!("lastkeyframetimestamp", ScriptDataValue::Number(194.375)),
                     obj_prop!("lastkeyframelocation", ScriptDataValue::Number(10169975.0)),
                     obj_prop!(
-                            "keyframes",
-                            ScriptDataValue::Object(vec![
-                                obj_prop!(
-                                    "filepositions",
-                                    ScriptDataValue::StrictArray(vec![
-                                        ScriptDataValue::Number(1058.0),
-                                        ScriptDataValue::Number(1143.0),
-                                        ScriptDataValue::Number(371887.0),
-                                        ScriptDataValue::Number(847626.0),
-                                        ScriptDataValue::Number(1334735.0),
-                                        ScriptDataValue::Number(1820692.0),
-                                        ScriptDataValue::Number(2304839.0),
-                                        ScriptDataValue::Number(2857985.0),
-                                        ScriptDataValue::Number(3395640.0),
-                                        ScriptDataValue::Number(3955507.0),
-                                        ScriptDataValue::Number(4448601.0),
-                                        ScriptDataValue::Number(4917339.0),
-                                        ScriptDataValue::Number(5380323.0),
-                                        ScriptDataValue::Number(5862615.0),
-                                        ScriptDataValue::Number(6364648.0),
-                                        ScriptDataValue::Number(6867232.0),
-                                        ScriptDataValue::Number(7414669.0),
-                                        ScriptDataValue::Number(7950581.0),
-                                        ScriptDataValue::Number(8594010.0),
-                                        ScriptDataValue::Number(9433239.0),
-                                        ScriptDataValue::Number(10088872.0),
-                                        ScriptDataValue::Number(10169975.0),
-                                    ])
-                                ),
-                                obj_prop!(
-                                    "times",
-                                    ScriptDataValue::StrictArray(vec![
-                                        ScriptDataValue::Number(0.0),
-                                        ScriptDataValue::Number(0.0),
-                                        ScriptDataValue::Number(10.0),
-                                        ScriptDataValue::Number(20.0),
-                                        ScriptDataValue::Number(30.0),
-                                        ScriptDataValue::Number(40.0),
-                                        ScriptDataValue::Number(50.0),
-                                        ScriptDataValue::Number(60.0),
-                                        ScriptDataValue::Number(70.0),
-                                        ScriptDataValue::Number(80.0),
-                                        ScriptDataValue::Number(90.0),
-                                        ScriptDataValue::Number(100.0),
-                                        ScriptDataValue::Number(110.0),
-                                        ScriptDataValue::Number(120.0),
-                                        ScriptDataValue::Number(130.0),
-                                        ScriptDataValue::Number(140.0),
-                                        ScriptDataValue::Number(150.0),
-                                        ScriptDataValue::Number(160.0),
-                                        ScriptDataValue::Number(170.0),
-                                        ScriptDataValue::Number(180.0),
-                                        ScriptDataValue::Number(190.0),
-                                        ScriptDataValue::Number(194.375),
-                                    ])
-                                ),
-                            ])
-                        ),
+                        "keyframes",
+                        ScriptDataValue::Object(vec![
+                            obj_prop!(
+                                "filepositions",
+                                ScriptDataValue::StrictArray(vec![
+                                    ScriptDataValue::Number(1058.0),
+                                    ScriptDataValue::Number(1143.0),
+                                    ScriptDataValue::Number(371887.0),
+                                    ScriptDataValue::Number(847626.0),
+                                    ScriptDataValue::Number(1334735.0),
+                                    ScriptDataValue::Number(1820692.0),
+                                    ScriptDataValue::Number(2304839.0),
+                                    ScriptDataValue::Number(2857985.0),
+                                    ScriptDataValue::Number(3395640.0),
+                                    ScriptDataValue::Number(3955507.0),
+                                    ScriptDataValue::Number(4448601.0),
+                                    ScriptDataValue::Number(4917339.0),
+                                    ScriptDataValue::Number(5380323.0),
+                                    ScriptDataValue::Number(5862615.0),
+                                    ScriptDataValue::Number(6364648.0),
+                                    ScriptDataValue::Number(6867232.0),
+                                    ScriptDataValue::Number(7414669.0),
+                                    ScriptDataValue::Number(7950581.0),
+                                    ScriptDataValue::Number(8594010.0),
+                                    ScriptDataValue::Number(9433239.0),
+                                    ScriptDataValue::Number(10088872.0),
+                                    ScriptDataValue::Number(10169975.0),
+                                ])
+                            ),
+                            obj_prop!(
+                                "times",
+                                ScriptDataValue::StrictArray(vec![
+                                    ScriptDataValue::Number(0.0),
+                                    ScriptDataValue::Number(0.0),
+                                    ScriptDataValue::Number(10.0),
+                                    ScriptDataValue::Number(20.0),
+                                    ScriptDataValue::Number(30.0),
+                                    ScriptDataValue::Number(40.0),
+                                    ScriptDataValue::Number(50.0),
+                                    ScriptDataValue::Number(60.0),
+                                    ScriptDataValue::Number(70.0),
+                                    ScriptDataValue::Number(80.0),
+                                    ScriptDataValue::Number(90.0),
+                                    ScriptDataValue::Number(100.0),
+                                    ScriptDataValue::Number(110.0),
+                                    ScriptDataValue::Number(120.0),
+                                    ScriptDataValue::Number(130.0),
+                                    ScriptDataValue::Number(140.0),
+                                    ScriptDataValue::Number(150.0),
+                                    ScriptDataValue::Number(160.0),
+                                    ScriptDataValue::Number(170.0),
+                                    ScriptDataValue::Number(180.0),
+                                    ScriptDataValue::Number(190.0),
+                                    ScriptDataValue::Number(194.375),
+                                ])
+                            ),
+                        ])
+                    ),
                 ]),
             }
         ))

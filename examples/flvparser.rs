@@ -4,9 +4,37 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::PathBuf;
 
-use flvparser::*;
+use flvparser::{parse, FlvFile, FlvTagType};
 use prettytable::{cell, format, row, Attr, Cell, Row, Table};
 use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+#[structopt(author, about)]
+struct Opt {
+    /// The input FLV file to parse.
+    #[structopt(short, long, parse(from_os_str))]
+    input: PathBuf,
+    /// Prints all tables about FLV File info.
+    #[structopt(short = "p", long)]
+    print: bool,
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let opt: Opt = Opt::from_args();
+
+    let file = File::open(opt.input)?;
+    let mut reader = BufReader::new(file);
+    let mut contents = vec![];
+    reader.read_to_end(&mut contents)?;
+
+    let flv = parse(&contents)?;
+    if opt.print {
+        print_table(&flv, true);
+    } else {
+        print_table(&flv, false);
+    }
+    Ok(())
+}
 
 fn print_table(flv_file: &FlvFile, print_body: bool) {
     let mut header = Table::new();
@@ -91,32 +119,4 @@ fn print_table(flv_file: &FlvFile, print_body: bool) {
         &format!("{}", audio_tag_num),
     ));
     result.printstd();
-}
-
-#[derive(Debug, StructOpt)]
-#[structopt(author, about)]
-struct Opt {
-    /// The input FLV file to parse.
-    #[structopt(short, long, parse(from_os_str))]
-    input: PathBuf,
-    /// Prints all tables about FLV File info.
-    #[structopt(short = "p", long)]
-    print: bool,
-}
-
-fn main() -> Result<()> {
-    let opt: Opt = Opt::from_args();
-
-    let file = File::open(opt.input)?;
-    let mut reader = BufReader::new(file);
-    let mut contents = vec![];
-    reader.read_to_end(&mut contents)?;
-
-    let flv = parse(&contents)?;
-    if opt.print {
-        print_table(&flv, true);
-    } else {
-        print_table(&flv, false);
-    }
-    Ok(())
 }

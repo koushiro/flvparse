@@ -1,8 +1,8 @@
 // Copyright 2019-2020 koushiro. Licensed under MIT.
 
-//! # flvparser
+//! # flvparse
 //!
-//! A FLV file parser written in Rust with nom.
+//! A FLV format parsing library written in Rust with nom.
 
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]

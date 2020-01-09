@@ -1,5 +1,5 @@
 [package]
-name = "flvparser"
+name = "flvparse"
 version = "0.1.0"
 authors = ["koushiro <koushiro.cqx@gmail.com>"]
 edition = "2018"
@@ -8,18 +8,13 @@ readme = "README.md"
 license = "MIT"
 homepage = "https://github.com/koushiro/flvparser"
 repository = "https://github.com/koushiro/flvparser"
-description = "A FLV file parsing library written in Rust"
+description = "A FLV format parsing library written in Rust"
 keywords = ["flv", "parser", "nom"]
 include = ["src/*", "Cargo.toml", "LICENSE", "README.md", ".gitignore"]
 
 [lib]
-name = "flvparser"
+name = "flvparse"
 path = "src/lib.rs"
-
-[[bin]]
-name = "flvparser"
-path = "src/cli.rs"
-required-features = ["cmd"]
 
 [features]
 default = ["std"]
@@ -27,10 +22,6 @@ default = ["std"]
 # you can use alloc feature on the stable version of rust 1.36+
 alloc = ["nom/alloc"]
 std = ["alloc", "nom/std"]
-# Only for binary
-cmd = ["structopt", "prettytable-rs"]
 
 [dependencies]
 nom = { version = "5", default-features = false }
-structopt = { version = "0.3", optional = true }
-prettytable-rs = { version = "0.8", optional = true }

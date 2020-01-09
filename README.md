@@ -20,7 +20,8 @@ fn main() {
 For a detailed example, see [example](src/cli.rs).
 
 ```
-cargo run --bin flvparser -- --input assets/test.flv
+cd cmd
+cargo run -- --input ../assets/test.flv
 
 +-----------------+-----------+
 | FLV File Header |           |
@@ -38,7 +39,8 @@ cargo run --bin flvparser -- --input assets/test.flv
 ```
 
 ```
-cargo run --bin flvparser -- --input assets/test.flv -p
+cd cmd
+cargo run -- --input ../assets/test.flv -p
 +-----------------+-----------+
 | FLV File Header |           |
 +-----------------+-----------+

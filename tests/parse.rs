@@ -2,7 +2,7 @@
 
 #![allow(clippy::unreadable_literal)]
 
-use flvparser::*;
+use flvparse::*;
 
 // Just use 3 tags of TEST_FLV_FILE:
 // 1. script tag

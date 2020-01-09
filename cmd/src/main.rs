@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::PathBuf;
 
-use flvparser::{parse, FlvFile, FlvTagType};
+use flvparse::{parse, FlvFile, FlvTagType};
 use prettytable::{cell, format, row, Attr, Cell, Row, Table};
 use structopt::StructOpt;
 

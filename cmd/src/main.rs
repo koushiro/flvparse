@@ -1,16 +1,42 @@
-extern crate flvparser;
-extern crate clap;
-#[macro_use]
-extern crate prettytable;
+// Copyright 2019-2020 koushiro. Licensed under MIT.
 
 use std::fs::File;
 use std::io::{BufReader, Read};
+use std::path::PathBuf;
 
-use flvparser::*;
-use clap::{App, Arg};
-use prettytable::{Table, Row, Cell, Attr, format};
+use flvparse::{parse, FlvFile, FlvTagType};
+use prettytable::{cell, format, row, Attr, Cell, Row, Table};
+use structopt::StructOpt;
 
-pub fn print_table(flv_file: &FLVFile, print_body: bool) {
+#[derive(Debug, StructOpt)]
+#[structopt(author, about)]
+struct Opt {
+    /// The input FLV file to parse.
+    #[structopt(short, long, parse(from_os_str))]
+    input: PathBuf,
+    /// Prints all tables about FLV File info.
+    #[structopt(short = "p", long)]
+    print: bool,
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let opt: Opt = Opt::from_args();
+
+    let file = File::open(opt.input)?;
+    let mut reader = BufReader::new(file);
+    let mut contents = vec![];
+    reader.read_to_end(&mut contents)?;
+
+    let flv = parse(&contents)?;
+    if opt.print {
+        print_table(&flv, true);
+    } else {
+        print_table(&flv, false);
+    }
+    Ok(())
+}
+
+fn print_table(flv_file: &FlvFile, print_body: bool) {
     let mut header = Table::new();
     header.set_titles(Row::new(vec![
         Cell::new("FLV File Header").with_style(Attr::Bold)
@@ -62,9 +88,9 @@ pub fn print_table(flv_file: &FLVFile, print_body: bool) {
     for (tag, _) in &flv_file.body.tags {
         index += 1;
         match tag.header.tag_type {
-            FLVTagType::Script => script_tag_num += 1,
-            FLVTagType::Video => video_tag_num += 1,
-            FLVTagType::Audio => audio_tag_num += 1,
+            FlvTagType::Script => script_tag_num += 1,
+            FlvTagType::Video => video_tag_num += 1,
+            FlvTagType::Audio => audio_tag_num += 1,
         }
         body.add_row(Row::new(vec![
             Cell::new(&format!("{}", index)),
@@ -93,40 +119,4 @@ pub fn print_table(flv_file: &FLVFile, print_body: bool) {
         &format!("{}", audio_tag_num),
     ));
     result.printstd();
-}
-
-fn main() {
-    let matches = App::new("FLV File Parser")
-        .version("0.1.0")
-        .author("Qinxuan Chen <koushiro.cqx@gmail.com>")
-        .about("A FLV File parser written in Rust with the nom framework")
-        .arg(
-            Arg::with_name("INPUT")
-                .help("The input FLV file to parse")
-                .required(true),
-        )
-        .arg(
-            Arg::with_name("print")
-                .short("p")
-                .long("print")
-                .help("Prints all tables about FLV File info"),
-        )
-        .get_matches();
-
-    let file_path = matches.value_of("INPUT").unwrap();
-    let file = File::open(file_path).expect("Unable to open the file");
-    let mut reader = BufReader::new(file);
-    let mut contents = vec![];
-    reader.read_to_end(&mut contents).unwrap();
-
-    match FLVParser::parse(&contents) {
-        Ok(flv_file) => {
-            if matches.is_present("print") {
-                print_table(&flv_file, true);
-            } else {
-                print_table(&flv_file, false);
-            }
-        }
-        Err(e) => println!("{:?}", e),
-    }
 }

@@ -1,23 +1,27 @@
 [package]
-name = "flvparser"
+name = "flvparse"
 version = "0.1.0"
 authors = ["koushiro <koushiro.cqx@gmail.com>"]
-repository = "https://github.com/koushiro/flvparser"
-description = "A FLV file parsing library written in Rust with nom framework"
+edition = "2018"
+
 readme = "README.md"
 license = "MIT"
-keywords = ["flv", "parser"]
+homepage = "https://github.com/koushiro/flvparser"
+repository = "https://github.com/koushiro/flvparser"
+description = "A FLV format parsing library written in Rust"
+keywords = ["flv", "parser", "nom"]
+include = ["src/*", "Cargo.toml", "LICENSE", "README.md", ".gitignore"]
 
-[badges]
-travis-ci = { repository = "koushiro/flvparser", branch = "master" }
-appveyor = { repository = "koushiro/flvparser", branch = "master", service = "github" }
-maintenance = { status = "actively-developed" }
+[lib]
+name = "flvparse"
+path = "src/lib.rs"
+
+[features]
+default = ["std"]
+# Waiting for https://github.com/Geal/nom/pull/1102 to be merged,
+# you can use alloc feature on the stable version of rust 1.36+
+alloc = ["nom/alloc"]
+std = ["alloc", "nom/std"]
 
 [dependencies]
-nom = "4.2"
-clap = "2"
-prettytable-rs = "^0.8"
-
-[[bin]]
-name = "main"
-path = "src/main.rs"
+nom = { version = "5", default-features = false }

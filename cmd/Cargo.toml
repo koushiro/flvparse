@@ -1,0 +1,14 @@
+[package]
+name = "flvparser"
+version = "0.1.0"
+authors = ["koushiro <koushiro.cqx@gmail.com>"]
+edition = "2018"
+
+readme = "../README.md"
+license = "MIT"
+description = "A FLV file parsing command line tool"
+
+[dependencies]
+flvparse = { path = "../" }
+structopt = "0.3"
+prettytable-rs = "0.8"

@@ -6,8 +6,8 @@ edition = "2018"
 
 readme = "README.md"
 license = "MIT"
-homepage = "https://github.com/koushiro/flvparser"
-repository = "https://github.com/koushiro/flvparser"
+homepage = "https://github.com/koushiro/flvparse"
+repository = "https://github.com/koushiro/flvparse"
 description = "A FLV format parsing library written in Rust"
 keywords = ["flv", "parser", "nom"]
 include = ["src/*", "Cargo.toml", "LICENSE", "README.md", ".gitignore"]

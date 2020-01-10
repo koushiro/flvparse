@@ -1,8 +1,15 @@
 # flvparse
 
-[![Build Status](https://travis-ci.org/koushiro/flvparse.svg?branch=master)](https://travis-ci.org/koushiro/flvparse)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/koushiro/flvparse?branch=master&svg=true)](https://ci.appveyor.com/project/koushiro/flvparse)
-[![GitHub License](https://img.shields.io/github/license/koushiro/flvparse.svg)](https://github.com/koushiro/flvparse/blob/master/LICENSE)
+[![Actions Status][ga-svg]][ga-url]
+[![GitHub License][license-svg]][license-url]
+[![dep-svg]][dep-rs]
+
+[ga-svg]: https://github.com/koushiro/flvparse/workflows/build/badge.svg
+[ga-url]: https://github.com/koushiro/flvparse/actions
+[license-svg]: https://img.shields.io/github/license/koushiro/flvparse?style=flat-square
+[license-url]: https://github.com/koushiro/flvparse/blob/master/LICENSE
+[dep-svg]: https://deps.rs/repo/github/koushiro/flvparse/status.svg
+[dep-rs]: https://deps.rs/repo/github/koushiro/flvparse
 
 A FLV format parsing library written in Rust with [nom](https://github.com/Geal/nom).
 

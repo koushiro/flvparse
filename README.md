@@ -1,10 +1,17 @@
-# flvparser
+# flvparse
 
-[![Build Status](https://travis-ci.org/koushiro/flvparser.svg?branch=master)](https://travis-ci.org/koushiro/flvparser)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/koushiro/flvparser?branch=master&svg=true)](https://ci.appveyor.com/project/koushiro/flvparser)
-[![GitHub License](https://img.shields.io/github/license/koushiro/flvparser.svg)](https://github.com/koushiro/flvparser/blob/master/LICENSE)
+[![Actions Status][ga-svg]][ga-url]
+[![GitHub License][license-svg]][license-url]
+[![dep-svg]][dep-rs]
 
-A FLV file parser written in Rust with [nom](https://github.com/Geal/nom).
+[ga-svg]: https://github.com/koushiro/flvparse/workflows/build/badge.svg
+[ga-url]: https://github.com/koushiro/flvparse/actions
+[license-svg]: https://img.shields.io/github/license/koushiro/flvparse?style=flat-square
+[license-url]: https://github.com/koushiro/flvparse/blob/master/LICENSE
+[dep-svg]: https://deps.rs/repo/github/koushiro/flvparse/status.svg
+[dep-rs]: https://deps.rs/repo/github/koushiro/flvparse
+
+A FLV format parsing library written in Rust with [nom](https://github.com/Geal/nom).
 
 ## Usage
 
@@ -12,7 +19,7 @@ A FLV file parser written in Rust with [nom](https://github.com/Geal/nom).
 
 ```toml
 [dependencies]
-flvparse = { git = "https://github.com/koushiro/flvparser" }
+flvparse = { git = "https://github.com/koushiro/flvparse" }
 ```
 
 ```rust
@@ -81,7 +88,7 @@ FlvFile
 ├──FlvFileHeader
 └──FlvFileBody
    ├──u32 -- first previous tag size
-   └──Vec<(FlvTag. u32)>
+   └──Vec<(FlvTag, u32)>
     
 FlvTag
 ├──FlvTagHeader

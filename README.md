@@ -2,7 +2,7 @@
 
 [![Actions Status][ga-svg]][ga-url]
 [![GitHub License][license-svg]][license-url]
-[![dep-svg]][dep-rs]
+[![Dependency Status][dep-svg]][dep-rs]
 
 [ga-svg]: https://github.com/koushiro/flvparse/workflows/build/badge.svg
 [ga-url]: https://github.com/koushiro/flvparse/actions

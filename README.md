@@ -3,6 +3,7 @@
 [![Actions Status][ga-svg]][ga-url]
 [![GitHub License][license-svg]][license-url]
 [![Dependency Status][dep-svg]][dep-rs]
+[![Coverage Status][codecov-svg]][codecov-url]
 
 [ga-svg]: https://github.com/koushiro/flvparse/workflows/build/badge.svg
 [ga-url]: https://github.com/koushiro/flvparse/actions
@@ -10,6 +11,8 @@
 [license-url]: https://github.com/koushiro/flvparse/blob/master/LICENSE
 [dep-svg]: https://deps.rs/repo/github/koushiro/flvparse/status.svg
 [dep-rs]: https://deps.rs/repo/github/koushiro/flvparse
+[codecov-svg]: https://img.shields.io/codecov/c/github/koushiro/flvparse?style=flat-square
+[codecov-url]: https://codecov.io/gh/koushiro/flvparse
 
 A FLV format parsing library written in Rust with [nom](https://github.com/Geal/nom).
 

@@ -18,7 +18,7 @@ path = "src/lib.rs"
 
 [features]
 default = ["std"]
-# Waiting for https://github.com/Geal/nom/pull/1102 to be merged,
+# Waiting for https://github.com/Geal/nom/pull/1057 to be merged,
 # you can use alloc feature on the stable version of rust 1.36+
 alloc = ["nom/alloc"]
 std = ["alloc", "nom/std"]

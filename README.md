@@ -2,15 +2,12 @@
 
 [![Actions Status][ga-svg]][ga-url]
 [![GitHub License][license-svg]][license-url]
-[![Dependency Status][deps.rs-svg]][deps.rs-url]
 [![Coverage Status][codecov-svg]][codecov-url]
 
 [ga-svg]: https://github.com/koushiro/flvparse/workflows/build/badge.svg
 [ga-url]: https://github.com/koushiro/flvparse/actions
 [license-svg]: https://img.shields.io/github/license/koushiro/flvparse?style=flat-square
 [license-url]: https://github.com/koushiro/flvparse/blob/master/LICENSE
-[deps.rs-svg]: https://deps.rs/repo/github/koushiro/flvparse/status.svg
-[deps.rs-url]: https://deps.rs/repo/github/koushiro/flvparse
 [codecov-svg]: https://img.shields.io/codecov/c/github/koushiro/flvparse?style=flat-square
 [codecov-url]: https://codecov.io/gh/koushiro/flvparse
 

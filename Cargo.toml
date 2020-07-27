@@ -24,4 +24,4 @@ alloc = ["nom/alloc"]
 std = ["alloc", "nom/std"]
 
 [dependencies]
-nom = { version = "5", default-features = false }
+nom = { version = "5.1.2", default-features = false }

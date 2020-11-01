@@ -18,10 +18,8 @@ path = "src/lib.rs"
 
 [features]
 default = ["std"]
-# Waiting for https://github.com/Geal/nom/pull/1057 to be merged,
-# you can use alloc feature on the stable version of rust 1.36+
 alloc = ["nom/alloc"]
-std = ["alloc", "nom/std"]
+std = ["nom/std"]
 
 [dependencies]
-nom = { version = "5.1.2", default-features = false }
+nom = { version = "6.0.0", default-features = false }

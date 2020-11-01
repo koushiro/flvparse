@@ -107,7 +107,7 @@ impl AudioTagHeader {
     /// Parse audio tag data header.
     pub fn parse(input: &[u8], size: usize) -> IResult<&[u8], AudioTagHeader> {
         if size < 1 {
-            return Err(NomErr::Incomplete(Needed::Size(1)));
+            return Err(NomErr::Incomplete(Needed::new(1)));
         }
 
         let (remain, (sound_format, sound_rate, sound_size, sound_type)) = try_parse!(
@@ -173,7 +173,7 @@ impl<'a> AudioTagBody<'a> {
     /// Parse audio tag data body.
     pub fn parse(input: &'a [u8], size: usize) -> IResult<&'a [u8], AudioTagBody<'a>> {
         if input.len() < size {
-            return Err(NomErr::Incomplete(Needed::Size(size)));
+            return Err(NomErr::Incomplete(Needed::new(size)));
         }
 
         Ok((
@@ -206,11 +206,11 @@ pub enum AACPacketType {
 /// Parse AAC audio packet.
 pub fn aac_audio_packet(input: &[u8], size: usize) -> IResult<&[u8], AACAudioPacket> {
     if input.len() < size {
-        return Err(NomErr::Incomplete(Needed::Size(size)));
+        return Err(NomErr::Incomplete(Needed::new(size)));
     }
 
     if size < 1 {
-        return Err(NomErr::Incomplete(Needed::Size(1)));
+        return Err(NomErr::Incomplete(Needed::new(1)));
     }
 
     let (_, packet_type) = try_parse!(

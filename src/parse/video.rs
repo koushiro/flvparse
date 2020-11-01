@@ -78,7 +78,7 @@ impl VideoTagHeader {
     /// Parse video tag data header.
     pub fn parse(input: &[u8], size: usize) -> IResult<&[u8], VideoTagHeader> {
         if size < 1 {
-            return Err(NomErr::Incomplete(Needed::Size(1)));
+            return Err(NomErr::Incomplete(Needed::new(1)));
         }
 
         let (remain, (frame_type, codec_id)) = try_parse!(
@@ -127,7 +127,7 @@ impl<'a> VideoTagBody<'a> {
     /// Parse video tag data body.
     pub fn parse(input: &'a [u8], size: usize) -> IResult<&'a [u8], VideoTagBody<'a>> {
         if input.len() < size {
-            return Err(NomErr::Incomplete(Needed::Size(size)));
+            return Err(NomErr::Incomplete(Needed::new(size)));
         }
 
         Ok((
@@ -170,11 +170,11 @@ pub enum AvcPacketType {
 /// Parse AVC video packet.
 pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AvcVideoPacket> {
     if input.len() < size {
-        return Err(NomErr::Incomplete(Needed::Size(size)));
+        return Err(NomErr::Incomplete(Needed::new(size)));
     }
 
     if size < 4 {
-        return Err(NomErr::Incomplete(Needed::Size(4)));
+        return Err(NomErr::Incomplete(Needed::new(4)));
     }
 
     let (_, (packet_type, composition_time)) = try_parse!(

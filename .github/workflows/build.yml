@@ -77,9 +77,7 @@ jobs:
           override: true
 
       - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          version: '0.14.2'
-
+        uses: actions-rs/tarpaulin@v0.1 
+  
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v1

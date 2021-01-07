@@ -26,7 +26,7 @@ fn main() {
 }
 ```
 
-For a detailed example, see [example](src/cli.rs).
+For a detailed example, see [example](cmd/src/main.rs).
 
 ```
 cd cmd

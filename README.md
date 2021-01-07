@@ -1,14 +1,11 @@
 # flvparse
 
-[![Actions Status][ga-svg]][ga-url]
-[![GitHub License][license-svg]][license-url]
+[![Build Status][ga-svg]][ga-url]
 [![Coverage Status][codecov-svg]][codecov-url]
 
 [ga-svg]: https://github.com/koushiro/flvparse/workflows/build/badge.svg
 [ga-url]: https://github.com/koushiro/flvparse/actions
-[license-svg]: https://img.shields.io/github/license/koushiro/flvparse?style=flat-square
-[license-url]: https://github.com/koushiro/flvparse/blob/master/LICENSE
-[codecov-svg]: https://img.shields.io/codecov/c/github/koushiro/flvparse?style=flat-square
+[codecov-svg]: https://img.shields.io/codecov/c/github/koushiro/flvparse
 [codecov-url]: https://codecov.io/gh/koushiro/flvparse
 
 A FLV format parsing library written in Rust with [nom](https://github.com/Geal/nom).
@@ -100,4 +97,4 @@ FlvTagData
 
 ## License
 
-MIT
+[MIT](LICENSE)

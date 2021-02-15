@@ -30,7 +30,8 @@ flvparse = "0.1"
 
 ```rust
 fn main() {
-    let flv = flvparse::parse(include_bytes!("assets/test.flv")).unwrap();
+    let bytes = include_bytes!("assets/test.flv");
+    let flv = flvparse::FlvFile::parse(bytes).unwrap();
     // ...
 }
 ```

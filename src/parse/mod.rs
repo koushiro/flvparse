@@ -1,4 +1,4 @@
-// Copyright 2019-2020 koushiro. Licensed under MIT.
+// Copyright 2019-2021 koushiro. Licensed under MIT.
 
 // Parse the structure of the contents of FLV files.
 // [The FLV File Format Spec](https://www.adobe.com/content/dam/acom/en/devnet/flv/video_file_format_spec_v10_1.pdf)
@@ -15,9 +15,7 @@ use nom::{
     IResult,
 };
 
-pub use self::audio::*;
-pub use self::script::*;
-pub use self::video::*;
+pub use self::{audio::*, script::*, video::*};
 
 const FLV_HEADER_SIGNATURE: [u8; 3] = [0x46, 0x4c, 0x56];
 

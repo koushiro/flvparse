@@ -3,14 +3,18 @@ name = "flvparse"
 version = "0.1.0"
 authors = ["koushiro <koushiro.cqx@gmail.com>"]
 edition = "2018"
-
 readme = "README.md"
-license = "MIT"
-description = "A FLV format parsing library written in Rust"
-homepage = "https://github.com/koushiro/flvparse"
+license = "MIT/APACHE-2.0"
+documentation = "https://docs.rs/flvparse"
 repository = "https://github.com/koushiro/flvparse"
+description = "A FLV format parsing library written in Rust"
 keywords = ["flv", "parse", "nom"]
-include = ["src/*", "Cargo.toml", "LICENSE", "README.md", ".gitignore"]
+exclude = [
+  ".github",
+  "assets",
+  "cmd",
+  "tests"
+]
 
 [lib]
 name = "flvparse"
@@ -22,4 +26,4 @@ alloc = ["nom/alloc"]
 std = ["nom/std"]
 
 [dependencies]
-nom = { version = "6.0.0", default-features = false }
+nom = { version = "6.1", default-features = false }

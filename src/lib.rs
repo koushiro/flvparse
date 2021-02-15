@@ -1,4 +1,4 @@
-// Copyright 2019-2020 koushiro. Licensed under MIT.
+// Copyright 2019-2021 koushiro. Licensed under MIT.
 
 //! # flvparse
 //!
@@ -13,16 +13,11 @@ extern crate alloc;
 #[macro_use]
 extern crate nom;
 
-mod error;
 mod parse;
 
-pub use self::error::{Error, Result};
 pub use self::parse::*;
 
-/// A helper function for parsing FLV format.
-pub fn parse(input: &[u8]) -> Result<FlvFile> {
-    match FlvFile::parse(input) {
-        Ok((_output, flv)) => Ok(flv),
-        Err(_) => Err(Error::Parse),
-    }
-}
+pub use nom::{
+    error::{Error, ErrorKind},
+    Err as NomErr, IResult, Needed,
+};

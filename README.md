@@ -1,32 +1,44 @@
 # flvparse
 
-[![Build Status][ga-svg]][ga-url]
-[![Coverage Status][codecov-svg]][codecov-url]
+[![ga-svg]][ga-url]
+[![crates-svg]][crates-url]
+[![docs-svg]][docs-url]
+[![codecov-svg]][codecov-url]
+[![deps-svg]][deps-url]
 
 [ga-svg]: https://github.com/koushiro/flvparse/workflows/build/badge.svg
 [ga-url]: https://github.com/koushiro/flvparse/actions
+[crates-svg]: https://img.shields.io/crates/v/flvparse
+[crates-url]: https://crates.io/crates/flvparse
+[docs-svg]: https://docs.rs/flvparse/badge.svg
+[docs-url]: https://docs.rs/flvparse
 [codecov-svg]: https://img.shields.io/codecov/c/github/koushiro/flvparse
 [codecov-url]: https://codecov.io/gh/koushiro/flvparse
+[deps-svg]: https://deps.rs/repo/github/koushiro/flvparse/status.svg
+[deps-url]: https://deps.rs/repo/github/koushiro/flvparse
 
 A FLV format parsing library written in Rust with [nom](https://github.com/Geal/nom).
 
 ## Usage
 
-### Simple example
+### Quick start
 
 ```toml
 [dependencies]
-flvparse = { git = "https://github.com/koushiro/flvparse" }
+flvparse = "0.1"
 ```
 
 ```rust
 fn main() {
-    let flv = flvparse::parse(include_bytes!("assets/test.flv")).unwrap();
+    let bytes = include_bytes!("assets/test.flv");
+    let flv = flvparse::FlvFile::parse(bytes).unwrap();
     // ...
 }
 ```
 
-For a detailed example, see [example](cmd/src/main.rs).
+### Example
+
+See [example](cmd/src/main.rs) for details.
 
 ```
 cd cmd
@@ -97,4 +109,15 @@ FlvTagData
 
 ## License
 
-[MIT](LICENSE)
+Licensed under either of
+
+- [Apache License, Version 2.0](LICENSE-APACHE)
+- [MIT License](LICENSE-MIT)
+
+at your option.
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.

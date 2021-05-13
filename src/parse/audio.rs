@@ -40,6 +40,7 @@ pub struct AudioTagHeader {
 }
 
 /// The audio format.
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum SoundFormat {
     /// 0, PcmPlatformEndian

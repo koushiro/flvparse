@@ -17,7 +17,7 @@ const VIDEO_TAG_HEADER_LENGTH: usize = 1;
 
 #[test]
 fn test_parse_flv_file() {
-    let flv_file = FlvFile::parse(&TEST_FLV_FILE[..]).unwrap().1;
+    let flv_file = FlvFile::parse(TEST_FLV_FILE).unwrap().1;
     assert_eq!(
         flv_file.header,
         FlvFileHeader {

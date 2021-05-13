@@ -56,6 +56,7 @@ pub enum FrameType {
 }
 
 /// The code identifier of video.
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum CodecID {
     /// 2, SorensonH263
@@ -155,6 +156,7 @@ pub struct AvcVideoPacket<'a> {
 }
 
 /// The type of AVC packet.
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum AvcPacketType {
     /// 0, SequenceHeader.

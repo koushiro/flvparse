@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  lints:
-    name: Build
+  build:
+    name: Build & Test
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +45,7 @@ jobs:
           command: test
 
   build-no-std:
-    name: Build Without Std
+    name: Build no_std
     runs-on: ubuntu-latest
 
     steps:

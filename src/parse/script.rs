@@ -3,8 +3,13 @@ use alloc::vec::Vec;
 use core::str;
 
 use nom::{
-    IResult,
+    Err as NomErr, IResult, Parser,
+    bytes::streaming::tag,
+    combinator::map_res,
+    error::{Error, ErrorKind},
+    multi::{count, length_data, many0},
     number::streaming::{be_f64, be_i16, be_u8, be_u16, be_u32},
+    sequence::terminated,
 };
 
 const SCRIPT_DATA_VALUE_STRING_TYPE: [u8; 1] = [0x02];
@@ -26,18 +31,10 @@ pub struct ScriptTag<'a> {
 impl<'a> ScriptTag<'a> {
     /// Parse script tag data.
     pub fn parse(input: &'a [u8], _size: usize) -> IResult<&'a [u8], ScriptTag<'a>> {
-        do_parse!(
-            input,
-            // ScriptTagValue.Type = 2 (String)
-            tag!(SCRIPT_DATA_VALUE_STRING_TYPE) >>
-            // Method or object name.
-            name: call!(ScriptDataValue::parse_string) >>
-            // AMF arguments or object properties.
-            // ScriptTagValue.Type = 8 (ECMA array)
-            value: call!(ScriptDataValue::parse) >>
-
-            (ScriptTag { name, value })
-        )
+        let (input, _) = tag(SCRIPT_DATA_VALUE_STRING_TYPE.as_slice())(input)?;
+        let (input, name) = ScriptDataValue::parse_string(input)?;
+        let (input, value) = ScriptDataValue::parse(input)?;
+        Ok((input, ScriptTag { name, value }))
     }
 }
 
@@ -73,23 +70,50 @@ pub enum ScriptDataValue<'a> {
 impl<'a> ScriptDataValue<'a> {
     /// Parse script tag data value.
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], ScriptDataValue<'a>> {
-        switch!(input,
-            // parse script value type
-            be_u8,
-            // parse script data value
-            0  => map!(Self::parse_number, ScriptDataValue::Number)               |
-            1  => map!(Self::parse_boolean, |v| ScriptDataValue::Boolean(v != 0)) |
-            2  => map!(Self::parse_string, ScriptDataValue::String)               |
-            3  => map!(Self::parse_object, ScriptDataValue::Object)               |
-            4  => value!(ScriptDataValue::MovieClip)                              |
-            5  => value!(ScriptDataValue::Null)                                   |
-            6  => value!(ScriptDataValue::Undefined)                              |
-            7  => map!(Self::parse_reference, ScriptDataValue::Reference)         |
-            8  => map!(Self::parse_ecma_array, ScriptDataValue::ECMAArray)        |
-            10 => map!(Self::parse_strict_array, ScriptDataValue::StrictArray)    |
-            11 => map!(Self::parse_date, ScriptDataValue::Date)                   |
-            12 => map!(Self::parse_long_string, ScriptDataValue::LongString)
-        )
+        let original_input = input;
+        let (input, value_type) = be_u8(input)?;
+        match value_type {
+            0 => {
+                let (input, number) = Self::parse_number(input)?;
+                Ok((input, ScriptDataValue::Number(number)))
+            },
+            1 => {
+                let (input, v) = Self::parse_boolean(input)?;
+                Ok((input, ScriptDataValue::Boolean(v != 0)))
+            },
+            2 => {
+                let (input, s) = Self::parse_string(input)?;
+                Ok((input, ScriptDataValue::String(s)))
+            },
+            3 => {
+                let (input, object) = Self::parse_object(input)?;
+                Ok((input, ScriptDataValue::Object(object)))
+            },
+            4 => Ok((input, ScriptDataValue::MovieClip)),
+            5 => Ok((input, ScriptDataValue::Null)),
+            6 => Ok((input, ScriptDataValue::Undefined)),
+            7 => {
+                let (input, reference) = Self::parse_reference(input)?;
+                Ok((input, ScriptDataValue::Reference(reference)))
+            },
+            8 => {
+                let (input, array) = Self::parse_ecma_array(input)?;
+                Ok((input, ScriptDataValue::ECMAArray(array)))
+            },
+            10 => {
+                let (input, array) = Self::parse_strict_array(input)?;
+                Ok((input, ScriptDataValue::StrictArray(array)))
+            },
+            11 => {
+                let (input, date) = Self::parse_date(input)?;
+                Ok((input, ScriptDataValue::Date(date)))
+            },
+            12 => {
+                let (input, s) = Self::parse_long_string(input)?;
+                Ok((input, ScriptDataValue::LongString(s)))
+            },
+            _ => Err(NomErr::Error(Error::new(original_input, ErrorKind::Switch))),
+        }
     }
 
     /// Parse script tag data number value.
@@ -104,36 +128,26 @@ impl<'a> ScriptDataValue<'a> {
 
     /// Parse script tag data string value.
     pub fn parse_string(input: &[u8]) -> IResult<&[u8], &str> {
-        map_res!(input, length_data!(be_u16), str::from_utf8)
+        map_res(length_data(be_u16), str::from_utf8).parse(input)
     }
 
     /// Parse script tag data object value.
     pub fn parse_object(input: &'a [u8]) -> IResult<&'a [u8], Vec<ScriptDataObjectProperty<'a>>> {
-        terminated!(
-            input,
-            // parse object properties
-            many0!(Self::parse_object_property),
-            // parse object end marker
-            call!(Self::parse_object_end_marker)
-        )
+        terminated(many0(Self::parse_object_property), Self::parse_object_end_marker).parse(input)
     }
 
     /// Parse script tag data object property.
     fn parse_object_property(input: &'a [u8]) -> IResult<&'a [u8], ScriptDataObjectProperty<'a>> {
-        do_parse!(
-            input,
-            // parse object property name
-            name: call!(Self::parse_string) >>
-            // parse object property value
-            value: call!(Self::parse) >>
-
-            (ScriptDataObjectProperty { name, value })
-        )
+        if input.starts_with(&OBJECT_END_MARKER) {
+            return Err(NomErr::Error(Error::new(input, ErrorKind::Tag)));
+        }
+        let (input, (name, value)) = (Self::parse_string, Self::parse).parse(input)?;
+        Ok((input, ScriptDataObjectProperty { name, value }))
     }
 
     /// Parse script tag data object end marker.
     fn parse_object_end_marker(input: &[u8]) -> IResult<&[u8], &[u8]> {
-        tag!(input, OBJECT_END_MARKER)
+        tag(OBJECT_END_MARKER.as_slice())(input)
     }
 
     /// Parse script tag data reference value.
@@ -146,48 +160,27 @@ impl<'a> ScriptDataValue<'a> {
         input: &'a [u8],
     ) -> IResult<&'a [u8], Vec<ScriptDataObjectProperty<'a>>> {
         // The list contains approximately ECMA Array Length number of items.
-        do_parse!(
-            input,
-            // parse ECMA array length
-            _length: be_u32 >>
-            // parse object Properties and Object End marker
-            object: call!(Self::parse_object) >>
-
-            (object)
-        )
+        let (input, _) = be_u32(input)?;
+        Self::parse_object(input)
     }
 
     /// Parse script tag data strict array value.
     pub fn parse_strict_array(input: &'a [u8]) -> IResult<&'a [u8], Vec<ScriptDataValue<'a>>> {
         // The list shall contain Strict Array Length number of values.
         // No terminating record follows the list.
-        do_parse!(
-            input,
-            // parse strict array length
-            length: be_u32 >>
-            // parse values
-            value: count!(call!(Self::parse), length as usize) >>
-
-            (value)
-        )
+        let (input, length) = be_u32(input)?;
+        count(Self::parse, length as usize).parse(input)
     }
 
     /// Parse script tag data date value.
     pub fn parse_date(input: &[u8]) -> IResult<&[u8], ScriptDataDate> {
-        do_parse!(
-            input,
-            // Number of milliseconds since UNIX_EPOCH.
-            date_time: be_f64 >>
-            // Local time offset in minutes from UTC.
-            local_date_time_offset: be_i16 >>
-
-            (ScriptDataDate { date_time, local_date_time_offset })
-        )
+        let (input, (date_time, local_date_time_offset)) = (be_f64, be_i16).parse(input)?;
+        Ok((input, ScriptDataDate { date_time, local_date_time_offset }))
     }
 
     /// Parse script tag data long string value.
     pub fn parse_long_string(input: &[u8]) -> IResult<&[u8], &str> {
-        map_res!(input, length_data!(be_u32), str::from_utf8)
+        map_res(length_data(be_u32), str::from_utf8).parse(input)
     }
 }
 

@@ -1,7 +1,13 @@
-use nom::{
-    Err as NomErr, IResult, Needed,
-    number::streaming::{be_i24, be_u8},
-};
+use nom::{Err as NomErr, IResult, Needed, bytes::streaming::take, number::streaming::be_u8};
+
+fn be_i24(input: &[u8]) -> IResult<&[u8], i32> {
+    let (input, bytes) = take(3usize)(input)?;
+    let mut value = (i32::from(bytes[0]) << 16) | (i32::from(bytes[1]) << 8) | i32::from(bytes[2]);
+    if (value & 0x0080_0000) != 0 {
+        value |= !0x00ff_ffff;
+    }
+    Ok((input, value))
+}
 
 /// The tag data part of `video` FLV tag, including `tag data header` and `tag data body`.
 #[derive(Clone, Debug, PartialEq)]
@@ -15,15 +21,9 @@ pub struct VideoTag<'a> {
 impl<'a> VideoTag<'a> {
     /// Parse video tag data.
     pub fn parse(input: &'a [u8], size: usize) -> IResult<&'a [u8], VideoTag<'a>> {
-        do_parse!(
-            input,
-            // parse video tag data header
-            header: call!(VideoTagHeader::parse, size) >>
-            // parse video tag data body
-            body: call!(VideoTagBody::parse, size - 1) >>
-
-            (VideoTag {header, body })
-        )
+        let (input, header) = VideoTagHeader::parse(input, size)?;
+        let (input, body) = VideoTagBody::parse(input, size.saturating_sub(1))?;
+        Ok((input, VideoTag { header, body }))
     }
 }
 
@@ -80,30 +80,25 @@ impl VideoTagHeader {
             return Err(NomErr::Incomplete(Needed::new(1)));
         }
 
-        let (remain, (frame_type, codec_id)) = try_parse!(
-            input,
-            bits!(tuple!(
-                // parse frame type
-                switch!(take_bits!(4u8),
-                    1  => value!(FrameType::Key)             |
-                    2  => value!(FrameType::Inter)           |
-                    3  => value!(FrameType::DisposableInter) |
-                    4  => value!(FrameType::Generated)       |
-                    5  => value!(FrameType::Command)         |
-                    _  => value!(FrameType::Unknown)
-                ),
-                // parse code id
-                switch!(take_bits!(4u8),
-                    2 => value!(CodecID::SorensonH263) |
-                    3 => value!(CodecID::Screen1)      |
-                    4 => value!(CodecID::VP6)          |
-                    5 => value!(CodecID::VP6Alpha)     |
-                    6 => value!(CodecID::Screen2)      |
-                    7 => value!(CodecID::AVC)          |
-                    _ => value!(CodecID::Unknown)
-                )
-            ))
-        );
+        let (remain, byte) = be_u8(input)?;
+        let frame_type = match byte >> 4 {
+            1 => FrameType::Key,
+            2 => FrameType::Inter,
+            3 => FrameType::DisposableInter,
+            4 => FrameType::Generated,
+            5 => FrameType::Command,
+            _ => FrameType::Unknown,
+        };
+
+        let codec_id = match byte & 0x0f {
+            2 => CodecID::SorensonH263,
+            3 => CodecID::Screen1,
+            4 => CodecID::VP6,
+            5 => CodecID::VP6Alpha,
+            6 => CodecID::Screen2,
+            7 => CodecID::AVC,
+            _ => CodecID::Unknown,
+        };
 
         Ok((remain, VideoTagHeader { frame_type, codec_id }))
     }
@@ -166,18 +161,14 @@ pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AvcVideoPac
         return Err(NomErr::Incomplete(Needed::new(4)));
     }
 
-    let (_, (packet_type, composition_time)) = try_parse!(
-        input,
-        tuple!(
-            switch!(be_u8,
-                0 => value!(AvcPacketType::SequenceHeader)  |
-                1 => value!(AvcPacketType::NALU)            |
-                2 => value!(AvcPacketType::EndOfSequence)   |
-                _ => value!(AvcPacketType::Unknown)
-            ),
-            be_i24
-        )
-    );
+    let (remain, packet_type_byte) = be_u8(input)?;
+    let packet_type = match packet_type_byte {
+        0 => AvcPacketType::SequenceHeader,
+        1 => AvcPacketType::NALU,
+        2 => AvcPacketType::EndOfSequence,
+        _ => AvcPacketType::Unknown,
+    };
+    let (_, composition_time) = be_i24(remain)?;
 
     Ok((
         &input[size..],

@@ -1,5 +1,3 @@
-// Copyright 2019-2021 koushiro. Licensed under MIT.
-
 //! # flvparse
 //!
 //! A FLV format parsing library written in Rust with nom.
@@ -15,9 +13,9 @@ extern crate nom;
 
 mod parse;
 
-pub use self::parse::*;
-
 pub use nom::{
-    error::{Error, ErrorKind},
     Err as NomErr, IResult, Needed,
+    error::{Error, ErrorKind},
 };
+
+pub use self::parse::*;

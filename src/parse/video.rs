@@ -1,8 +1,6 @@
-// Copyright 2019-2021 koushiro. Licensed under MIT.
-
 use nom::{
-    number::streaming::{be_i24, be_u8},
     Err as NomErr, IResult, Needed,
+    number::streaming::{be_i24, be_u8},
 };
 
 /// The tag data part of `video` FLV tag, including `tag data header` and `tag data body`.
@@ -107,13 +105,7 @@ impl VideoTagHeader {
             ))
         );
 
-        Ok((
-            remain,
-            VideoTagHeader {
-                frame_type,
-                codec_id,
-            },
-        ))
+        Ok((remain, VideoTagHeader { frame_type, codec_id }))
     }
 }
 
@@ -131,12 +123,7 @@ impl<'a> VideoTagBody<'a> {
             return Err(NomErr::Incomplete(Needed::new(size)));
         }
 
-        Ok((
-            &input[size..],
-            VideoTagBody {
-                data: &input[0..size],
-            },
-        ))
+        Ok((&input[size..], VideoTagBody { data: &input[0..size] }))
     }
 }
 
@@ -170,7 +157,7 @@ pub enum AvcPacketType {
 }
 
 /// Parse AVC video packet.
-pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AvcVideoPacket> {
+pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AvcVideoPacket<'_>> {
     if input.len() < size {
         return Err(NomErr::Incomplete(Needed::new(size)));
     }
@@ -194,10 +181,6 @@ pub fn avc_video_packet(input: &[u8], size: usize) -> IResult<&[u8], AvcVideoPac
 
     Ok((
         &input[size..],
-        AvcVideoPacket {
-            packet_type,
-            composition_time,
-            avc_data: &input[4..size],
-        },
+        AvcVideoPacket { packet_type, composition_time, avc_data: &input[4..size] },
     ))
 }

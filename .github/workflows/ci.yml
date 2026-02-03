@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "v0.*.x" # v0.1.x or v0.20.x
+      - "v[1-9]*.x" # v1.x or v20.x
+  pull_request:
+    branches:
+      - main
+      - "v0.*.x" # v0.1.x or v0.20.x
+      - "v[1-9]*.x" # v1.x or v20.x
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUSTFLAGS: -D warnings
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  TAPLO_CLI_VERSION: 0.10.0
+
+jobs:
+  check-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache taplo-cli
+        id: cache-taplo
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/bin/taplo
+          key: ${{ runner.os }}-taplo-${{ env.TAPLO_CLI_VERSION }}
+
+      - name: Install taplo-cli if not cached
+        if: steps.cache-taplo.outputs.cache-hit != 'true'
+        shell: bash
+        run: cargo install taplo-cli@${TAPLO_CLI_VERSION} --locked
+
+      - name: Run taplo fmt
+        run: taplo fmt --check
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+  check-clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: swatinem/rust-cache@v2
+
+      - name: Run cargo clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  build-default-features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: swatinem/rust-cache@v2
+      - run: cargo build
+
+  build-no-default-features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: swatinem/rust-cache@v2
+      - run: cargo build --no-default-features --features alloc
+
+  check-msrv:
+    runs-on: ubuntu-latest
+    env:
+      MSRV: 1.85.0
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup MSRV
+        run: rustup toolchain install ${MSRV} --no-self-update
+
+      - name: Check code
+        run: cargo +${MSRV} check --all-features
+
+  check-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: swatinem/rust-cache@v2
+
+      - name: Generate docs
+        run: cargo doc --no-deps --lib --all-features
+
+  run-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.os }}
+
+      - name: Run tests
+        run: cargo test --workspace --all-features
+        env:
+          RUST_BACKTRACE: 1

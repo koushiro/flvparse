@@ -12,7 +12,7 @@
 [crates.io]: https://crates.io/crates/flvparse
 [whatrustisit]: https://www.whatrustisit.com
 
-A FLV format parsing library written in Rust with [nom](https://github.com/Geal/nom).
+A toy FLV format parsing library written in Rust with [nom](https://github.com/Geal/nom), mainly for learning `nom` (not production-ready).
 
 ## Usage
 

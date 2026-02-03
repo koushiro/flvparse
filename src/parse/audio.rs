@@ -1,6 +1,4 @@
-// Copyright 2019-2021 koushiro. Licensed under MIT.
-
-use nom::{number::streaming::be_u8, Err as NomErr, IResult, Needed};
+use nom::{Err as NomErr, IResult, Needed, number::streaming::be_u8};
 
 /// The tag data part of `audio` FLV tag, including `tag data header` and `tag data body`.
 #[derive(Clone, Debug, PartialEq)]
@@ -151,15 +149,7 @@ impl AudioTagHeader {
             ))
         );
 
-        Ok((
-            remain,
-            AudioTagHeader {
-                sound_format,
-                sound_rate,
-                sound_size,
-                sound_type,
-            },
-        ))
+        Ok((remain, AudioTagHeader { sound_format, sound_rate, sound_size, sound_type }))
     }
 }
 
@@ -177,12 +167,7 @@ impl<'a> AudioTagBody<'a> {
             return Err(NomErr::Incomplete(Needed::new(size)));
         }
 
-        Ok((
-            &input[size..],
-            AudioTagBody {
-                data: &input[0..size],
-            },
-        ))
+        Ok((&input[size..], AudioTagBody { data: &input[0..size] }))
     }
 }
 
@@ -205,7 +190,7 @@ pub enum AACPacketType {
 }
 
 /// Parse AAC audio packet.
-pub fn aac_audio_packet(input: &[u8], size: usize) -> IResult<&[u8], AACAudioPacket> {
+pub fn aac_audio_packet(input: &[u8], size: usize) -> IResult<&[u8], AACAudioPacket<'_>> {
     if input.len() < size {
         return Err(NomErr::Incomplete(Needed::new(size)));
     }
@@ -222,11 +207,5 @@ pub fn aac_audio_packet(input: &[u8], size: usize) -> IResult<&[u8], AACAudioPac
         )
     );
 
-    Ok((
-        &input[size..],
-        AACAudioPacket {
-            packet_type,
-            aac_data: &input[1..size],
-        },
-    ))
+    Ok((&input[size..], AACAudioPacket { packet_type, aac_data: &input[1..size] }))
 }

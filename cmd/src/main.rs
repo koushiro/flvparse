@@ -1,34 +1,35 @@
-// Copyright 2019-2021 koushiro. Licensed under MIT.
+use std::{
+    fs::File,
+    io::{BufReader, Read},
+    path::PathBuf,
+};
 
-use std::fs::File;
-use std::io::{BufReader, Read};
-use std::path::PathBuf;
+use anyhow::{Result, anyhow};
+use clap::Parser;
+use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets};
+use flvparse::{FlvFile, FlvTagType};
 
-use flvparse::{parse, FlvFile, FlvTagType};
-use prettytable::{cell, format, row, Attr, Cell, Row, Table};
-use structopt::StructOpt;
-
-#[derive(Debug, StructOpt)]
-#[structopt(author, about)]
-struct Opt {
+#[derive(Debug, Parser)]
+#[command(author, about)]
+struct Cli {
     /// The input FLV file to parse.
-    #[structopt(short, long, parse(from_os_str))]
+    #[arg(short, long)]
     input: PathBuf,
     /// Prints all tables about FLV File info.
-    #[structopt(short = "p", long)]
+    #[arg(short, long)]
     print: bool,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let opt: Opt = Opt::from_args();
+fn main() -> Result<()> {
+    let cli: Cli = Cli::parse();
 
-    let file = File::open(opt.input)?;
+    let file = File::open(cli.input)?;
     let mut reader = BufReader::new(file);
-    let mut contents = vec![];
-    reader.read_to_end(&mut contents)?;
+    let mut input = vec![];
+    reader.read_to_end(&mut input)?;
 
-    let flv = parse(&contents)?;
-    if opt.print {
+    let (_, flv) = FlvFile::parse(&input).map_err(|e| anyhow!("failed to parse: {e:?}"))?;
+    if cli.print {
         print_table(&flv, true);
     } else {
         print_table(&flv, false);
@@ -37,50 +38,51 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn print_table(flv_file: &FlvFile, print_body: bool) {
+    println!("FLV File Header");
     let mut header = Table::new();
-    header.set_titles(Row::new(vec![
-        Cell::new("FLV File Header").with_style(Attr::Bold)
-    ]));
-    header.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
-    header.add_row(row!(
-        "Signature (3B)",
-        &format!(
+    header.load_preset(presets::UTF8_BORDERS_ONLY);
+    header.set_content_arrangement(ContentArrangement::Dynamic);
+    header.set_header(vec![
+        Cell::new("Field").add_attribute(Attribute::Bold),
+        Cell::new("Value").add_attribute(Attribute::Bold),
+    ]);
+    header.add_row(vec![
+        Cell::new("Signature (3B)"),
+        Cell::new(format!(
             "{:x} {:x} {:x}",
             flv_file.header.signature[0],
             flv_file.header.signature[1],
             flv_file.header.signature[2]
-        )
-    ));
-    header.add_row(row!(
-        "Version (1B)",
-        &format!("{}", flv_file.header.version)
-    ));
-    header.add_row(row!(
-        "Flags (1B)",
-        &format!(
+        )),
+    ]);
+    header.add_row(vec![
+        Cell::new("Version (1B)"),
+        Cell::new(format!("{}", flv_file.header.version)),
+    ]);
+    header.add_row(vec![
+        Cell::new("Flags (1B)"),
+        Cell::new(format!(
             "{:04b} {:04b}",
             flv_file.header.flags & 0xf0,
             flv_file.header.flags & 0x0f
-        )
-    ));
-    header.add_row(row!(
-        "DataOffset (4B)",
-        &format!("{}", flv_file.header.data_offset)
-    ));
-    header.printstd();
+        )),
+    ]);
+    header.add_row(vec![
+        Cell::new("DataOffset (4B)"),
+        Cell::new(format!("{}", flv_file.header.data_offset)),
+    ]);
+    println!("{header}");
 
     let mut body = Table::new();
-    body.set_titles(Row::new(vec![
-        Cell::new("FLV File Body").with_style(Attr::Bold)
-    ]));
-    body.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
-    body.add_row(row!(
-        "Index",
-        "TagType (1B)",
-        "DataSize (3B)",
-        "Timestamp (4B)",
-        "StreamID (3B)"
-    ));
+    body.load_preset(presets::UTF8_BORDERS_ONLY);
+    body.set_content_arrangement(ContentArrangement::Dynamic);
+    body.set_header(vec![
+        Cell::new("Index").add_attribute(Attribute::Bold),
+        Cell::new("TagType (1B)").add_attribute(Attribute::Bold),
+        Cell::new("DataSize (3B)").add_attribute(Attribute::Bold),
+        Cell::new("Timestamp (4B)").add_attribute(Attribute::Bold),
+        Cell::new("StreamID (3B)").add_attribute(Attribute::Bold),
+    ]);
     let mut index = 0usize;
     let mut script_tag_num = 0usize;
     let mut video_tag_num = 0usize;
@@ -92,31 +94,34 @@ fn print_table(flv_file: &FlvFile, print_body: bool) {
             FlvTagType::Video => video_tag_num += 1,
             FlvTagType::Audio => audio_tag_num += 1,
         }
-        body.add_row(Row::new(vec![
-            Cell::new(&format!("{}", index)),
-            Cell::new(&format!("{:?}", tag.header.tag_type)),
-            Cell::new(&format!("{}", tag.header.data_size)),
-            Cell::new(&format!("{}", tag.header.timestamp)),
-            Cell::new(&format!("{}", tag.header.stream_id)),
-        ]));
+        body.add_row(vec![
+            Cell::new(format!("{}", index)),
+            Cell::new(format!("{:?}", tag.header.tag_type)),
+            Cell::new(format!("{}", tag.header.data_size)),
+            Cell::new(format!("{}", tag.header.timestamp)),
+            Cell::new(format!("{}", tag.header.stream_id)),
+        ]);
     }
     if print_body {
-        body.printstd();
+        println!("FLV File Body");
+        println!("{body}");
     }
 
+    println!("Tag Summary");
     let mut result = Table::new();
-    result.set_titles(Row::new(vec![
-        Cell::new("Total tag number").with_style(Attr::Bold),
-        Cell::new("Script tag number").with_style(Attr::Bold),
-        Cell::new("Video tag number").with_style(Attr::Bold),
-        Cell::new("Audio tag number").with_style(Attr::Bold),
-    ]));
-    result.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
-    result.add_row(row!(
-        &format!("{}", index),
-        &format!("{}", script_tag_num),
-        &format!("{}", video_tag_num),
-        &format!("{}", audio_tag_num),
-    ));
-    result.printstd();
+    result.load_preset(presets::UTF8_BORDERS_ONLY);
+    result.set_content_arrangement(ContentArrangement::Dynamic);
+    result.set_header(vec![
+        Cell::new("Total tag number").add_attribute(Attribute::Bold),
+        Cell::new("Script tag number").add_attribute(Attribute::Bold),
+        Cell::new("Video tag number").add_attribute(Attribute::Bold),
+        Cell::new("Audio tag number").add_attribute(Attribute::Bold),
+    ]);
+    result.add_row(vec![
+        Cell::new(format!("{}", index)),
+        Cell::new(format!("{}", script_tag_num)),
+        Cell::new(format!("{}", video_tag_num)),
+        Cell::new(format!("{}", audio_tag_num)),
+    ]);
+    println!("{result}");
 }

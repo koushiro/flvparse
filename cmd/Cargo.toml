@@ -1,14 +1,15 @@
 [package]
 name = "flvparser"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["koushiro <koushiro.cqx@gmail.com>"]
-edition = "2018"
-
-readme = "../README.md"
-license = "MIT"
 description = "A FLV file parsing command line tool"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
 
 [dependencies]
+anyhow = "1.0"
 flvparse = { path = "../" }
-structopt = "0.3"
-prettytable-rs = "0.8"
+clap = { version = "4.5", features = ["derive"] }
+comfy-table = "7.2"

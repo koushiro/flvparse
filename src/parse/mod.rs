@@ -1,5 +1,3 @@
-// Copyright 2019-2021 koushiro. Licensed under MIT.
-
 // Parse the structure of the contents of FLV files.
 // [The FLV File Format Spec](https://www.adobe.com/content/dam/acom/en/devnet/flv/video_file_format_spec_v10_1.pdf)
 
@@ -7,12 +5,12 @@ mod audio;
 mod script;
 mod video;
 
-#[cfg(all(not(feature = "std"), feature = "alloc"))]
+#[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
 
 use nom::{
-    number::streaming::{be_u24, be_u32, be_u8},
     IResult,
+    number::streaming::{be_u8, be_u24, be_u32},
 };
 
 pub use self::{audio::*, script::*, video::*};
@@ -156,7 +154,8 @@ pub struct FlvTagHeader {
     pub tag_type: FlvTagType,
     /// The size of the tag's data part, 3 bytes.
     pub data_size: u32,
-    /// The timestamp (in milliseconds) of the tag, Timestamp (3 bytes) + TimestampExtended (1 byte).
+    /// The timestamp (in milliseconds) of the tag,
+    /// Timestamp (3 bytes) + TimestampExtended (1byte).
     pub timestamp: u32,
     /// The id of stream is always 0, 3 bytes.
     pub stream_id: u32,

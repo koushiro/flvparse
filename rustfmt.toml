@@ -1,0 +1,18 @@
+# Basic
+edition = "2024"
+max_width = 100
+use_small_heuristics = "Max"
+# Imports
+group_imports = "StdExternalCrate"
+imports_granularity = "Crate"
+reorder_imports = true
+# Consistency
+newline_style = "Unix"
+# Format comments
+comment_width = 100
+wrap_comments = true
+# Misc
+chain_width = 80
+match_block_trailing_comma = true
+merge_derives = false
+use_field_init_shorthand = true

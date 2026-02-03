@@ -1,12 +1,10 @@
-// Copyright 2019-2021 koushiro. Licensed under MIT.
-
-#[cfg(all(not(feature = "std"), feature = "alloc"))]
+#[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
 use core::str;
 
 use nom::{
-    number::streaming::{be_f64, be_i16, be_u16, be_u32, be_u8},
     IResult,
+    number::streaming::{be_f64, be_i16, be_u8, be_u16, be_u32},
 };
 
 const SCRIPT_DATA_VALUE_STRING_TYPE: [u8; 1] = [0x02];

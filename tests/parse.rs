@@ -1,5 +1,3 @@
-// Copyright 2019-2021 koushiro. Licensed under MIT.
-
 #![allow(clippy::unreadable_literal)]
 
 use flvparse::*;
@@ -38,10 +36,7 @@ fn test_parse_flv_file() {
 #[test]
 fn test_flv_file_header() {
     let end = FLV_FILE_HEADER_LENGTH;
-    println!(
-        "flv file header = {:?}",
-        FlvFileHeader::parse(&TEST_FLV_FILE[..end]).unwrap().1
-    );
+    println!("flv file header = {:?}", FlvFileHeader::parse(&TEST_FLV_FILE[..end]).unwrap().1);
     assert_eq!(
         FlvFileHeader::parse(&TEST_FLV_FILE[..FLV_FILE_HEADER_LENGTH]),
         Ok((
@@ -80,10 +75,7 @@ fn test_flv_tag() {
         + 48
         + PREVIOUS_TAG_SIZE_LENGTH;
     let end: usize = start + FLV_TAG_HEADER_LENGTH + 7;
-    println!(
-        "flv tag = {:?}",
-        FlvTag::parse(&TEST_FLV_FILE[start..end]).unwrap().1
-    );
+    println!("flv tag = {:?}", FlvTag::parse(&TEST_FLV_FILE[start..end]).unwrap().1);
     assert_eq!(
         FlvTag::parse(&TEST_FLV_FILE[start..end]),
         Ok((
@@ -104,9 +96,7 @@ fn test_flv_tag() {
                         sound_type: SoundType::Stereo,  // 0b01 = 1
                     },
                     // 0x0012 1056 e500, 6 bytes
-                    body: AudioTagBody {
-                        data: &b"\x00\x12\x10\x56\xe5\x00"[..],
-                    },
+                    body: AudioTagBody { data: &b"\x00\x12\x10\x56\xe5\x00"[..] },
                 })
             }
         ))
@@ -121,10 +111,7 @@ fn test_flv_tag_header() {
     // script tag (the first tag in TEST_FLV_FILE)
     let mut start = FLV_FILE_HEADER_LENGTH + PREVIOUS_TAG_SIZE_LENGTH;
     let mut end = start + FLV_TAG_HEADER_LENGTH;
-    println!(
-        "flv tag header = {:?}",
-        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1
-    );
+    println!("flv tag header = {:?}", FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1);
     assert_eq!(
         FlvTagHeader::parse(&TEST_FLV_FILE[start..end]),
         Ok((
@@ -141,10 +128,7 @@ fn test_flv_tag_header() {
     // video tag (the second tag in TEST_FLV_FILE)
     start = end + 1030 + PREVIOUS_TAG_SIZE_LENGTH;
     end = start + FLV_TAG_HEADER_LENGTH;
-    println!(
-        "flv tag header = {:?}",
-        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1
-    );
+    println!("flv tag header = {:?}", FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1);
     assert_eq!(
         FlvTagHeader::parse(&TEST_FLV_FILE[start..end]),
         Ok((
@@ -161,10 +145,7 @@ fn test_flv_tag_header() {
     // audio tag (the third tag in TEST_FLV_FILE)
     start = end + 48 + PREVIOUS_TAG_SIZE_LENGTH;
     end = start + FLV_TAG_HEADER_LENGTH;
-    println!(
-        "flv tag header = {:?}",
-        FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1
-    );
+    println!("flv tag header = {:?}", FlvTagHeader::parse(&TEST_FLV_FILE[start..end]).unwrap().1);
     assert_eq!(
         FlvTagHeader::parse(&TEST_FLV_FILE[start..end]),
         Ok((
@@ -194,9 +175,7 @@ fn test_flv_tag_data() {
     let end = start + 7;
     println!(
         "flv tag data = {:?}",
-        FlvTagData::parse(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7)
-            .unwrap()
-            .1
+        FlvTagData::parse(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7).unwrap().1
     );
     assert_eq!(
         FlvTagData::parse(&TEST_FLV_FILE[start..end], FlvTagType::Audio, 7),
@@ -211,9 +190,7 @@ fn test_flv_tag_data() {
                     sound_type: SoundType::Stereo,  // 0b01 = 1
                 },
                 // 0x0012 1056 e500, 6 bytes
-                body: AudioTagBody {
-                    data: &b"\x00\x12\x10\x56\xe5\x00"[..],
-                },
+                body: AudioTagBody { data: &b"\x00\x12\x10\x56\xe5\x00"[..] },
             })
         ))
     );
@@ -232,10 +209,7 @@ fn test_audio_tag() {
         + PREVIOUS_TAG_SIZE_LENGTH
         + FLV_TAG_HEADER_LENGTH;
     let end = start + 7;
-    println!(
-        "audio tag = {:?}",
-        AudioTag::parse(&TEST_FLV_FILE[start..end], 7).unwrap().1
-    );
+    println!("audio tag = {:?}", AudioTag::parse(&TEST_FLV_FILE[start..end], 7).unwrap().1);
     assert_eq!(
         AudioTag::parse(&TEST_FLV_FILE[start..end], 7),
         Ok((
@@ -249,9 +223,7 @@ fn test_audio_tag() {
                     sound_type: SoundType::Stereo,  // 0b01 = 1
                 },
                 // 0x0012 1056 e500, 6 bytes
-                body: AudioTagBody {
-                    data: &b"\x00\x12\x10\x56\xe5\x00"[..],
-                },
+                body: AudioTagBody { data: &b"\x00\x12\x10\x56\xe5\x00"[..] },
             }
         ))
     );
@@ -316,9 +288,7 @@ fn test_audio_tag_body() {
         Ok((
             &b""[..],
             // 0x0012 1056 e500, 6 bytes
-            AudioTagBody {
-                data: &b"\x00\x12\x10\x56\xe5\x00"[..],
-            }
+            AudioTagBody { data: &b"\x00\x12\x10\x56\xe5\x00"[..] }
         ))
     );
 }
@@ -333,10 +303,7 @@ fn test_video_tag() {
         + PREVIOUS_TAG_SIZE_LENGTH
         + FLV_TAG_HEADER_LENGTH;
     let end = start + 48;
-    println!(
-        "video tag = {:?}",
-        VideoTag::parse(&TEST_FLV_FILE[start..end], 48).unwrap().1
-    );
+    println!("video tag = {:?}", VideoTag::parse(&TEST_FLV_FILE[start..end], 48).unwrap().1);
     assert_eq!(
         VideoTag::parse(&TEST_FLV_FILE[start..end], 48),
         Ok((
@@ -428,10 +395,7 @@ fn test_video_tag_body() {
 
 macro_rules! obj_prop {
     ($name:expr, $value:expr) => {
-        ScriptDataObjectProperty {
-            name: $name,
-            value: $value,
-        }
+        ScriptDataObjectProperty { name: $name, value: $value }
     };
 }
 
@@ -440,10 +404,7 @@ fn test_script_tag() {
     // script tag (the first tag in TEST_FLV_FILE)
     let start = FLV_FILE_HEADER_LENGTH + PREVIOUS_TAG_SIZE_LENGTH + FLV_TAG_HEADER_LENGTH;
     let end = start + 1030;
-    println!(
-        "script tag = {:?}",
-        ScriptTag::parse(&TEST_FLV_FILE[start..end], 1030)
-    );
+    println!("script tag = {:?}", ScriptTag::parse(&TEST_FLV_FILE[start..end], 1030));
     assert_eq!(
         ScriptTag::parse(&TEST_FLV_FILE[start..end], 1030),
         Ok((
@@ -549,19 +510,10 @@ fn test_script_tag() {
 #[test]
 fn test_script_data_date() {
     let input = &b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08Remain"[..];
-    println!(
-        "script data date = {:?}",
-        ScriptDataValue::parse_date(input).unwrap().1
-    );
+    println!("script data date = {:?}", ScriptDataValue::parse_date(input).unwrap().1);
     assert_eq!(
         ScriptDataValue::parse_date(input),
-        Ok((
-            &b"Remain"[..],
-            ScriptDataDate {
-                date_time: 0.0,
-                local_date_time_offset: 8,
-            }
-        ))
+        Ok((&b"Remain"[..], ScriptDataDate { date_time: 0.0, local_date_time_offset: 8 }))
     );
 }
 
@@ -572,8 +524,5 @@ fn test_script_data_long_string() {
         "script data long string = {:?}",
         ScriptDataValue::parse_long_string(input).unwrap().1
     );
-    assert_eq!(
-        ScriptDataValue::parse_long_string(input),
-        Ok((&b"Remain"[..], "Long String"))
-    );
+    assert_eq!(ScriptDataValue::parse_long_string(input), Ok((&b"Remain"[..], "Long String")));
 }

@@ -1,8 +1,4 @@
-use nom::{
-    Err as NomErr, IResult, Needed,
-    bytes::streaming::take,
-    number::streaming::be_u8,
-};
+use nom::{Err as NomErr, IResult, Needed, bytes::streaming::take, number::streaming::be_u8};
 
 fn be_i24(input: &[u8]) -> IResult<&[u8], i32> {
     let (input, bytes) = take(3usize)(input)?;

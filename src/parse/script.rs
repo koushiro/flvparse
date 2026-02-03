@@ -3,9 +3,7 @@ use alloc::vec::Vec;
 use core::str;
 
 use nom::{
-    Err as NomErr,
-    IResult,
-    Parser,
+    Err as NomErr, IResult, Parser,
     bytes::streaming::tag,
     combinator::map_res,
     error::{Error, ErrorKind},
@@ -78,42 +76,42 @@ impl<'a> ScriptDataValue<'a> {
             0 => {
                 let (input, number) = Self::parse_number(input)?;
                 Ok((input, ScriptDataValue::Number(number)))
-            }
+            },
             1 => {
                 let (input, v) = Self::parse_boolean(input)?;
                 Ok((input, ScriptDataValue::Boolean(v != 0)))
-            }
+            },
             2 => {
                 let (input, s) = Self::parse_string(input)?;
                 Ok((input, ScriptDataValue::String(s)))
-            }
+            },
             3 => {
                 let (input, object) = Self::parse_object(input)?;
                 Ok((input, ScriptDataValue::Object(object)))
-            }
+            },
             4 => Ok((input, ScriptDataValue::MovieClip)),
             5 => Ok((input, ScriptDataValue::Null)),
             6 => Ok((input, ScriptDataValue::Undefined)),
             7 => {
                 let (input, reference) = Self::parse_reference(input)?;
                 Ok((input, ScriptDataValue::Reference(reference)))
-            }
+            },
             8 => {
                 let (input, array) = Self::parse_ecma_array(input)?;
                 Ok((input, ScriptDataValue::ECMAArray(array)))
-            }
+            },
             10 => {
                 let (input, array) = Self::parse_strict_array(input)?;
                 Ok((input, ScriptDataValue::StrictArray(array)))
-            }
+            },
             11 => {
                 let (input, date) = Self::parse_date(input)?;
                 Ok((input, ScriptDataValue::Date(date)))
-            }
+            },
             12 => {
                 let (input, s) = Self::parse_long_string(input)?;
                 Ok((input, ScriptDataValue::LongString(s)))
-            }
+            },
             _ => Err(NomErr::Error(Error::new(original_input, ErrorKind::Switch))),
         }
     }

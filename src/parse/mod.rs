@@ -9,14 +9,12 @@ mod video;
 use alloc::vec::Vec;
 
 use nom::{
-    IResult,
-    Err as NomErr,
+    Err as NomErr, IResult, Parser,
     bytes::streaming::{tag, take},
     combinator::complete,
     error::{Error, ErrorKind},
     multi::many0,
     number::streaming::{be_u8, be_u32},
-    Parser,
 };
 
 pub use self::{audio::*, script::*, video::*};
@@ -212,15 +210,15 @@ impl<'a> FlvTagData<'a> {
             FlvTagType::Audio => {
                 let (input, tag) = AudioTag::parse(input, size)?;
                 Ok((input, FlvTagData::Audio(tag)))
-            }
+            },
             FlvTagType::Video => {
                 let (input, tag) = VideoTag::parse(input, size)?;
                 Ok((input, FlvTagData::Video(tag)))
-            }
+            },
             FlvTagType::Script => {
                 let (input, tag) = ScriptTag::parse(input, size)?;
                 Ok((input, FlvTagData::Script(tag)))
-            }
+            },
         }
     }
 }

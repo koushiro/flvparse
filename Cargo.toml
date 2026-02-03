@@ -34,4 +34,4 @@ default = ["std"]
 std = ["nom/std"]
 
 [dependencies]
-nom = { version = "6.1", default-features = false, features = ["alloc"] }
+nom = { version = "8", default-features = false, features = ["alloc"] }

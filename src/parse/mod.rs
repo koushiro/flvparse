@@ -10,12 +10,24 @@ use alloc::vec::Vec;
 
 use nom::{
     IResult,
-    number::streaming::{be_u8, be_u24, be_u32},
+    Err as NomErr,
+    bytes::streaming::{tag, take},
+    combinator::complete,
+    error::{Error, ErrorKind},
+    multi::many0,
+    number::streaming::{be_u8, be_u32},
+    Parser,
 };
 
 pub use self::{audio::*, script::*, video::*};
 
 const FLV_HEADER_SIGNATURE: [u8; 3] = [0x46, 0x4c, 0x56];
+
+fn be_u24(input: &[u8]) -> IResult<&[u8], u32> {
+    let (input, bytes) = take(3usize)(input)?;
+    let value = (u32::from(bytes[0]) << 16) | (u32::from(bytes[1]) << 8) | u32::from(bytes[2]);
+    Ok((input, value))
+}
 
 /// The FLV file structure, including header and body.
 #[derive(Clone, Debug, PartialEq)]
@@ -29,15 +41,9 @@ pub struct FlvFile<'a> {
 impl<'a> FlvFile<'a> {
     /// Parse FLV file.
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], FlvFile<'a>> {
-        do_parse!(
-            input,
-            // parse file header
-            header: call!(FlvFileHeader::parse) >>
-            // parse file body
-            body: call!(FlvFileBody::parse) >>
-
-            (FlvFile { header, body })
-        )
+        let (input, header) = FlvFileHeader::parse(input)?;
+        let (input, body) = FlvFileBody::parse(input)?;
+        Ok((input, FlvFile { header, body }))
     }
 }
 
@@ -64,26 +70,22 @@ pub struct FlvFileHeader {
 impl FlvFileHeader {
     /// Parse FLV file header.
     pub fn parse(input: &[u8]) -> IResult<&[u8], FlvFileHeader> {
-        do_parse!(
-            input,
-            // FLV Signature
-            tag!(FLV_HEADER_SIGNATURE) >>
-            // FLV File Version
-            version: be_u8 >>
-            // Flags the presents whether `audio` tags or `video` tags are exist.
-            flags: be_u8 >>
-            // The length of this header in bytes
-            data_offset: be_u32 >>
+        let (input, _) = tag(FLV_HEADER_SIGNATURE.as_slice())(input)?;
+        let (input, version) = be_u8(input)?;
+        let (input, flags) = be_u8(input)?;
+        let (input, data_offset) = be_u32(input)?;
 
-            (FlvFileHeader {
+        Ok((
+            input,
+            FlvFileHeader {
                 signature: FLV_HEADER_SIGNATURE,
                 version,
                 flags,
                 has_audio: flags & 4 == 4,
                 has_video: flags & 1 == 1,
                 data_offset,
-            })
-        )
+            },
+        ))
     }
 }
 
@@ -100,15 +102,10 @@ impl<'a> FlvFileBody<'a> {
     // https://github.com/Geal/nom/issues/790 - many0 returns Incomplete in weird cases.
     /// Parse FLV file body.
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], FlvFileBody<'a>> {
-        do_parse!(
-            input,
-            // The first previous tag size.
-            first_previous_tag_size: be_u32 >>
-            // FLV Tag and the size of the tag.
-            tags: many0!(complete!(tuple!(call!(FlvTag::parse), be_u32))) >>
+        let (input, first_previous_tag_size) = be_u32(input)?;
+        let (input, tags) = many0(complete((|i| FlvTag::parse(i), be_u32))).parse(input)?;
 
-            (FlvFileBody { first_previous_tag_size, tags })
-        )
+        Ok((input, FlvFileBody { first_previous_tag_size, tags }))
     }
 }
 
@@ -129,15 +126,9 @@ pub struct FlvTag<'a> {
 impl<'a> FlvTag<'a> {
     /// Parse FLV tag.
     pub fn parse(input: &'a [u8]) -> IResult<&'a [u8], FlvTag<'a>> {
-        do_parse!(
-            input,
-            // parse tag header
-            header: call!(FlvTagHeader::parse) >>
-            // parse tag data
-            data: call!(FlvTagData::parse, header.tag_type, header.data_size as usize) >>
-
-            (FlvTag { header, data })
-        )
+        let (input, header) = FlvTagHeader::parse(input)?;
+        let (input, data) = FlvTagData::parse(input, header.tag_type, header.data_size as usize)?;
+        Ok((input, FlvTag { header, data }))
     }
 }
 
@@ -175,30 +166,27 @@ pub enum FlvTagType {
 impl FlvTagHeader {
     /// Parse FLV tag header.
     pub fn parse(input: &[u8]) -> IResult<&[u8], FlvTagHeader> {
-        do_parse!(
-            input,
-            // Tag Type
-            tag_type: switch!(be_u8,
-                    8  => value!(FlvTagType::Audio) |
-                    9  => value!(FlvTagType::Video) |
-                    18 => value!(FlvTagType::Script)
-            ) >>
-            // The size of the tag's data part
-            data_size: be_u24 >>
-            // The timestamp (in milliseconds) of the tag
-            timestamp: be_u24 >>
-            // Extension of the timestamp field to form a SI32 value
-            timestamp_extended: be_u8 >>
-            // The id of stream
-            stream_id: be_u24 >>
+        let (input, tag_type_byte) = be_u8(input)?;
+        let tag_type = match tag_type_byte {
+            8 => FlvTagType::Audio,
+            9 => FlvTagType::Video,
+            18 => FlvTagType::Script,
+            _ => return Err(NomErr::Error(Error::new(input, ErrorKind::Switch))),
+        };
+        let (input, data_size) = be_u24(input)?;
+        let (input, timestamp) = be_u24(input)?;
+        let (input, timestamp_extended) = be_u8(input)?;
+        let (input, stream_id) = be_u24(input)?;
 
-            (FlvTagHeader {
+        Ok((
+            input,
+            FlvTagHeader {
                 tag_type,
                 data_size,
                 timestamp: (u32::from(timestamp_extended) << 24) + timestamp,
                 stream_id,
-            })
-        )
+            },
+        ))
     }
 }
 
@@ -221,9 +209,18 @@ impl<'a> FlvTagData<'a> {
         size: usize,
     ) -> IResult<&'a [u8], FlvTagData<'a>> {
         match tag_type {
-            FlvTagType::Audio => map!(input, call!(AudioTag::parse, size), FlvTagData::Audio),
-            FlvTagType::Video => map!(input, call!(VideoTag::parse, size), FlvTagData::Video),
-            FlvTagType::Script => map!(input, call!(ScriptTag::parse, size), FlvTagData::Script),
+            FlvTagType::Audio => {
+                let (input, tag) = AudioTag::parse(input, size)?;
+                Ok((input, FlvTagData::Audio(tag)))
+            }
+            FlvTagType::Video => {
+                let (input, tag) = VideoTag::parse(input, size)?;
+                Ok((input, FlvTagData::Video(tag)))
+            }
+            FlvTagType::Script => {
+                let (input, tag) = ScriptTag::parse(input, size)?;
+                Ok((input, FlvTagData::Script(tag)))
+            }
         }
     }
 }

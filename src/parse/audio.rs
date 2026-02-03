@@ -1,4 +1,8 @@
-use nom::{Err as NomErr, IResult, Needed, number::streaming::be_u8};
+use nom::{
+    Err as NomErr, IResult, Needed,
+    error::{Error, ErrorKind},
+    number::streaming::be_u8,
+};
 
 /// The tag data part of `audio` FLV tag, including `tag data header` and `tag data body`.
 #[derive(Clone, Debug, PartialEq)]
@@ -12,15 +16,9 @@ pub struct AudioTag<'a> {
 impl<'a> AudioTag<'a> {
     /// Parse audio tag data.
     pub fn parse(input: &'a [u8], size: usize) -> IResult<&'a [u8], AudioTag<'a>> {
-        do_parse!(
-            input,
-            // parse audio tag header
-            header: call!(AudioTagHeader::parse, size) >>
-            // parse audio tag body
-            body: call!(AudioTagBody::parse, size - 1) >>
-
-           (AudioTag { header, body })
-        )
+        let (input, header) = AudioTagHeader::parse(input, size)?;
+        let (input, body) = AudioTagBody::parse(input, size.saturating_sub(1))?;
+        Ok((input, AudioTag { header, body }))
     }
 }
 
@@ -109,45 +107,45 @@ impl AudioTagHeader {
             return Err(NomErr::Incomplete(Needed::new(1)));
         }
 
-        let (remain, (sound_format, sound_rate, sound_size, sound_type)) = try_parse!(
-            input,
-            bits!(tuple!(
-                // parse sound format
-                switch!(take_bits!(4u8),
-                    0  => value!(SoundFormat::PcmPlatformEndian)    |
-                    1  => value!(SoundFormat::ADPCM)                |
-                    2  => value!(SoundFormat::MP3)                  |
-                    3  => value!(SoundFormat::PcmLittleEndian)      |
-                    4  => value!(SoundFormat::Nellymoser16kHzMono)  |
-                    5  => value!(SoundFormat::Nellymoser8kHzMono)   |
-                    6  => value!(SoundFormat::Nellymoser)           |
-                    7  => value!(SoundFormat::PcmALaw)              |
-                    8  => value!(SoundFormat::PcmMuLaw)             |
-                    9  => value!(SoundFormat::Reserved)             |
-                    10 => value!(SoundFormat::AAC)                  |
-                    11 => value!(SoundFormat::Speex)                |
-                    14 => value!(SoundFormat::MP3_8kHz)             |
-                    15 => value!(SoundFormat::DeviceSpecific)
-                ),
-                // parse sound rate
-                switch!(take_bits!(2u8),
-                    0 => value!(SoundRate::_5_5KHZ) |
-                    1 => value!(SoundRate::_11KHZ)  |
-                    2 => value!(SoundRate::_22KHZ)  |
-                    3 => value!(SoundRate::_44KHZ)
-                ),
-                // parse sound sample size
-                switch!(take_bits!(1u8),
-                    0 => value!(SoundSize::_8Bit)   |
-                    1 => value!(SoundSize::_16Bit)
-                ),
-                // parse sound type
-                switch!(take_bits!(1u8),
-                    0 => value!(SoundType::Mono)    |
-                    1 => value!(SoundType::Stereo)
-                )
-            ))
-        );
+        let (remain, byte) = be_u8(input)?;
+
+        let sound_format = match byte >> 4 {
+            0 => SoundFormat::PcmPlatformEndian,
+            1 => SoundFormat::ADPCM,
+            2 => SoundFormat::MP3,
+            3 => SoundFormat::PcmLittleEndian,
+            4 => SoundFormat::Nellymoser16kHzMono,
+            5 => SoundFormat::Nellymoser8kHzMono,
+            6 => SoundFormat::Nellymoser,
+            7 => SoundFormat::PcmALaw,
+            8 => SoundFormat::PcmMuLaw,
+            9 => SoundFormat::Reserved,
+            10 => SoundFormat::AAC,
+            11 => SoundFormat::Speex,
+            14 => SoundFormat::MP3_8kHz,
+            15 => SoundFormat::DeviceSpecific,
+            _ => SoundFormat::Reserved,
+        };
+
+        let sound_rate = match (byte >> 2) & 0b11 {
+            0 => SoundRate::_5_5KHZ,
+            1 => SoundRate::_11KHZ,
+            2 => SoundRate::_22KHZ,
+            3 => SoundRate::_44KHZ,
+            _ => SoundRate::_5_5KHZ,
+        };
+
+        let sound_size = match (byte >> 1) & 0b1 {
+            0 => SoundSize::_8Bit,
+            1 => SoundSize::_16Bit,
+            _ => SoundSize::_8Bit,
+        };
+
+        let sound_type = match byte & 0b1 {
+            0 => SoundType::Mono,
+            1 => SoundType::Stereo,
+            _ => SoundType::Mono,
+        };
 
         Ok((remain, AudioTagHeader { sound_format, sound_rate, sound_size, sound_type }))
     }
@@ -199,13 +197,12 @@ pub fn aac_audio_packet(input: &[u8], size: usize) -> IResult<&[u8], AACAudioPac
         return Err(NomErr::Incomplete(Needed::new(1)));
     }
 
-    let (_, packet_type) = try_parse!(
-        input,
-        switch!(be_u8,
-            0 => value!(AACPacketType::SequenceHeader)  |
-            1 => value!(AACPacketType::Raw)
-        )
-    );
+    let (remain, packet_type_byte) = be_u8(input)?;
+    let packet_type = match packet_type_byte {
+        0 => AACPacketType::SequenceHeader,
+        1 => AACPacketType::Raw,
+        _ => return Err(NomErr::Error(Error::new(remain, ErrorKind::Switch))),
+    };
 
     Ok((&input[size..], AACAudioPacket { packet_type, aac_data: &input[1..size] }))
 }

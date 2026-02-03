@@ -1,0 +1,8 @@
+# NOTE: Before releasing, confirm config like below:
+# `cargo release config --manifest-path Cargo.toml -c release.toml`
+push-remote = "upstream"
+allow-branch = ["main"]
+consolidate-commits = false
+pre-release-commit-message = "chore: release {{crate_name}}-v{{version}}"
+tag-message = "chore: release {{crate_name}}-v{{version}}"
+tag-name = "{{prefix}}v{{version}}"

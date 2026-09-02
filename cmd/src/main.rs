@@ -40,7 +40,7 @@ fn main() -> Result<()> {
 fn print_table(flv_file: &FlvFile, print_body: bool) {
     println!("FLV File Header");
     let mut header = Table::new();
-    header.load_preset(presets::UTF8_BORDERS_ONLY);
+    header.load_style(presets::UTF8_BORDERS_ONLY);
     header.set_content_arrangement(ContentArrangement::Dynamic);
     header.set_header(vec![
         Cell::new("Field").add_attribute(Attribute::Bold),
@@ -74,7 +74,7 @@ fn print_table(flv_file: &FlvFile, print_body: bool) {
     println!("{header}");
 
     let mut body = Table::new();
-    body.load_preset(presets::UTF8_BORDERS_ONLY);
+    body.load_style(presets::UTF8_BORDERS_ONLY);
     body.set_content_arrangement(ContentArrangement::Dynamic);
     body.set_header(vec![
         Cell::new("Index").add_attribute(Attribute::Bold),
@@ -109,7 +109,7 @@ fn print_table(flv_file: &FlvFile, print_body: bool) {
 
     println!("Tag Summary");
     let mut result = Table::new();
-    result.load_preset(presets::UTF8_BORDERS_ONLY);
+    result.load_style(presets::UTF8_BORDERS_ONLY);
     result.set_content_arrangement(ContentArrangement::Dynamic);
     result.set_header(vec![
         Cell::new("Total tag number").add_attribute(Attribute::Bold),
